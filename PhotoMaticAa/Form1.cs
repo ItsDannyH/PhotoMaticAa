@@ -74,7 +74,7 @@ namespace PhotoMaticAa
                 MessageBox.Show("Camera is niet actief.");
                 return;
             }
-
+            btnTakePictures.Enabled = false;
             capturedPhotos.Clear();
             photoCount = 0;
 
@@ -131,6 +131,7 @@ namespace PhotoMaticAa
 
             // Als je meteen wilt printen:
             PrintImage(strip);
+            btnTakePictures.Enabled = true;
         }
         private void PrintImage(Image imageToPrint)
         {
