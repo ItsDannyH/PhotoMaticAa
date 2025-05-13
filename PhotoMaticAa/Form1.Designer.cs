@@ -28,12 +28,47 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "Form1";
+            pictureBox1 = new PictureBox();
+            btnTakePictures = new Button();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            SuspendLayout();
+            // 
+            // pictureBox1
+            // 
+            pictureBox1.Location = new Point(30, 12);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(758, 398);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox1.TabIndex = 0;
+            pictureBox1.TabStop = false;
+            // 
+            // btnTakePictures
+            // 
+            btnTakePictures.Location = new Point(278, 416);
+            btnTakePictures.Name = "btnTakePictures";
+            btnTakePictures.Size = new Size(292, 34);
+            btnTakePictures.TabIndex = 1;
+            btnTakePictures.Text = "Take Picture";
+            btnTakePictures.UseVisualStyleBackColor = true;
+            btnTakePictures.Click += btnTakePictures_Click;
+            // 
+            // Form1
+            // 
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(800, 476);
+            Controls.Add(btnTakePictures);
+            Controls.Add(pictureBox1);
+            Name = "Form1";
+            Text = "Form1";
+            Load += Form1_Load;
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ResumeLayout(false);
         }
 
         #endregion
+
+        private PictureBox pictureBox1;
+        private Button btnTakePictures;
     }
 }

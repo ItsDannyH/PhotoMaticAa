@@ -6,6 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v8.0": {
+      "PhotoMaticAa/1.0.0": {
+        "dependencies": {
+          "AForge.Video": "2.2.5",
+          "AForge.Video.DirectShow": "2.2.5"
+        },
+        "runtime": {
+          "PhotoMaticAa.dll": {}
+        }
+      },
       "AForge/2.2.5": {
         "runtime": {
           "lib/AForge.dll": {
@@ -39,6 +48,11 @@
     }
   },
   "libraries": {
+    "PhotoMaticAa/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "AForge/2.2.5": {
       "type": "package",
       "serviceable": true,
