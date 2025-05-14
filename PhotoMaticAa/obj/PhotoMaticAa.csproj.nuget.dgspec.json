@@ -57,6 +57,10 @@
             "AForge.Video.DirectShow": {
               "target": "Package",
               "version": "[2.2.5, )"
+            },
+            "NAudio": {
+              "target": "Package",
+              "version": "[2.2.1, )"
             }
           },
           "imports": [

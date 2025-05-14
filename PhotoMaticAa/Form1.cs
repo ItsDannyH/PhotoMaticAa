@@ -2,6 +2,11 @@ using System.Drawing.Printing;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
+using NAudio.Wave;
+using System.Media;
+using System;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace PhotoMaticAa
 {
@@ -10,9 +15,15 @@ namespace PhotoMaticAa
         private FilterInfoCollection? videoDevices;
         private VideoCaptureDevice? videoSource;
 
+        private WaveInEvent waveIn;
+        private bool isTriggered = false;
+        private int triggerThreshold = 70; // Gevoeligheid (0–100)
+        private int cooldownTime = 5000;
+
         private List<Bitmap> capturedPhotos = new();
         private int photoCount = 0;
         private System.Windows.Forms.Timer? photoTimer;
+
 
         public Form1()
         {
@@ -23,6 +34,22 @@ namespace PhotoMaticAa
         {
             this.FormClosing += Form1_FormClosing;
             StartCamera();
+            StartMicrophone();
+        }
+        private void PlayClickSound()
+        {
+            string path = Path.Combine(Application.StartupPath, "Sounds", "camera.wav");
+
+            // Controleer of het bestand bestaat
+            if (File.Exists(path))
+            {
+                SoundPlayer player = new SoundPlayer(path);
+                player.Play();
+            }
+            else
+            {
+                MessageBox.Show("Het geluid bestand is niet gevonden.");
+            }
         }
 
         private void StartCamera()
@@ -44,6 +71,67 @@ namespace PhotoMaticAa
 
             // Start camera
             videoSource.Start();
+        }
+        private void StartMicrophone(int deviceIndex = 0)
+        {
+            if (waveIn != null)
+            {
+                waveIn.DataAvailable -= WaveIn_DataAvailable;
+                waveIn.StopRecording();
+                waveIn.Dispose();
+            }
+
+            waveIn = new WaveInEvent
+            {
+                DeviceNumber = deviceIndex,
+                WaveFormat = new WaveFormat(44100, 1)
+            };
+            waveIn.DataAvailable += WaveIn_DataAvailable;
+            waveIn.StartRecording();
+        }
+
+        private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
+        {
+            try
+            {
+                int maxVolume = 0;
+                for (int i = 0; i < e.BytesRecorded; i += 2)
+                {
+                    short sample = (short)((e.Buffer[i + 1] << 8) | e.Buffer[i]);
+                    maxVolume = Math.Max(maxVolume, Math.Abs(sample));
+                }
+
+                int volumeLevel = (int)((float)maxVolume / short.MaxValue * 100);
+
+                // Update UI met microfoonvolume
+                this.BeginInvoke(new Action(() =>
+                {
+                    progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
+                }));
+
+                if (volumeLevel > triggerThreshold && !isTriggered)
+                {
+                    isTriggered = true;
+
+                    // Start actie bij trigger
+                    this.BeginInvoke(() =>
+                    {
+                        PlayClickSound(); // Je eigen methode
+                        TakePicture();      // Je eigen methode
+                    });
+
+                    // Cooldown wachten
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(cooldownTime);
+                        isTriggered = false;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Fout in mic detectie: " + ex.Message);
+            }
         }
 
         private void Video_NewFrame(object sender, NewFrameEventArgs eventArgs)
@@ -69,6 +157,11 @@ namespace PhotoMaticAa
 
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
+            TakePicture();
+        }
+
+        private void TakePicture()
+        {
             if (videoSource == null || !videoSource.IsRunning)
             {
                 MessageBox.Show("Camera is niet actief.");
@@ -79,10 +172,12 @@ namespace PhotoMaticAa
             photoCount = 0;
 
             photoTimer = new System.Windows.Forms.Timer();
-            photoTimer.Interval = 2000; // 2 seconden tussen foto's
+            int intervalSeconds = (int)numInterval.Value;
+            photoTimer.Interval = intervalSeconds * 1000;
             photoTimer.Tick += PhotoTimer_Tick;
             photoTimer.Start();
         }
+
         private void PhotoTimer_Tick(object? sender, EventArgs e)
         {
             if (videoSource == null || pictureBox1.Image == null) return;
@@ -90,6 +185,7 @@ namespace PhotoMaticAa
             // Capture huidige frame
             Bitmap photo = new Bitmap(pictureBox1.Image);
             capturedPhotos.Add(photo);
+            PlayClickSound();
             photoCount++;
 
             if (photoCount >= 3)
@@ -123,7 +219,7 @@ namespace PhotoMaticAa
 
             // Voeg tekst toe onderaan
             Font font = new Font("Arial", 12);
-            string customText = "Bedankt voor het poseren!";
+            string customText = txtOndertekst.Text;
             g.DrawString(customText, font, Brushes.Black, new PointF(margin, strip.Height - textHeight));
 
             // Toon de strip in een nieuwe PictureBox of sla op
@@ -161,6 +257,11 @@ namespace PhotoMaticAa
             {
                 MessageBox.Show("Fout bij printen: " + ex.Message);
             }
+        }
+
+        private void numInterval_ValueChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

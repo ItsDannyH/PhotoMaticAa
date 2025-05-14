@@ -6,8 +6,16 @@ C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\P
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\AForge.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\AForge.Video.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\AForge.Video.DirectShow.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.Asio.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.Core.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.Midi.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.Wasapi.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.WinForms.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\NAudio.WinMM.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.csproj.AssemblyReference.cache
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.Form1.resources
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.Properties.Resources.resources
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.csproj.GenerateResource.cache
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.AssemblyInfoInputs.cache
@@ -20,3 +28,4 @@ C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\r
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.pdb
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.genruntimeconfig.cache
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\ref\PhotoMaticAa.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\sounds\camera.wav
