@@ -7,6 +7,8 @@ using System.Media;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO.Ports;
+
 
 namespace PhotoMaticAa
 {
@@ -24,6 +26,7 @@ namespace PhotoMaticAa
         private int photoCount = 0;
         private System.Windows.Forms.Timer? photoTimer;
 
+        private SerialPort serialPort;
 
         public Form1()
         {
@@ -35,6 +38,8 @@ namespace PhotoMaticAa
             this.FormClosing += Form1_FormClosing;
             StartCamera();
             StartMicrophone();
+            serialPort = new SerialPort("COM3", 9600); // vervang COM3 met juiste poort
+            serialPort.Open();
         }
         private void PlayClickSound()
         {
@@ -117,7 +122,7 @@ namespace PhotoMaticAa
                     this.BeginInvoke(() =>
                     {
                         PlayClickSound(); // Je eigen methode
-                        TakePicture();      // Je eigen methode
+                        StartCountdown();    // Je eigen methode
                     });
 
                     // Cooldown wachten
@@ -157,7 +162,7 @@ namespace PhotoMaticAa
 
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
-            TakePicture();
+            StartCountdown();
         }
 
         private void TakePicture()
@@ -259,6 +264,37 @@ namespace PhotoMaticAa
             }
         }
 
+        private void StartCountdown()
+        {
+            if (serialPort?.IsOpen == true)
+            {
+                serialPort.WriteLine("COUNTDOWN");
+            }
+
+            // eventueel kleine delay om countdown synchroon te houden
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                BeginInvoke(() =>
+                {
+                    btnTakePictures.PerformClick(); // maak foto na 3 seconden
+                });
+            });
+        }
+
+        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            string data = serialPort.ReadLine().Trim();
+
+            if (data == "PHOTO")
+            {
+                this.BeginInvoke(new Action(() =>
+                {
+                    TakeSinglePicture(); // 1 foto per trigger
+                }));
+
+                serialPort.WriteLine("OK");
+            }
+        }
         private void numInterval_ValueChanged(object sender, EventArgs e)
         {
 
