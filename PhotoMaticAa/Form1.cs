@@ -17,9 +17,14 @@ namespace PhotoMaticAa
         private FilterInfoCollection? videoDevices;
         private VideoCaptureDevice? videoSource;
 
+        private int currentPhotoIndex = 0;
+        private int totalPhotosToTake = 3;
+        private bool isTakingPictures = false; // flag om meerdere triggers van takepicture te voorkomen
+
+
         private WaveInEvent waveIn;
         private bool isTriggered = false;
-        private int triggerThreshold = 70; // Gevoeligheid (0–100)
+        private int triggerThreshold = 60; // Gevoeligheid (0–100)
         private int cooldownTime = 5000;
 
         private List<Bitmap> capturedPhotos = new();
@@ -40,6 +45,7 @@ namespace PhotoMaticAa
             StartMicrophone();
             serialPort = new SerialPort("COM3", 9600); // vervang COM3 met juiste poort
             serialPort.Open();
+            serialPort.DataReceived += SerialPort_DataReceived;
         }
         private void PlayClickSound()
         {
@@ -121,8 +127,7 @@ namespace PhotoMaticAa
                     // Start actie bij trigger
                     this.BeginInvoke(() =>
                     {
-                        PlayClickSound(); // Je eigen methode
-                        StartCountdown();    // Je eigen methode
+                        TakePicture();   // activeer foto reeks
                     });
 
                     // Cooldown wachten
@@ -162,46 +167,45 @@ namespace PhotoMaticAa
 
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
-            StartCountdown();
+            TakePicture();
         }
 
-        private void TakePicture()
+        private async void TakePicture()
         {
+            if (isTakingPictures) return;
+            isTakingPictures = true;
+
             if (videoSource == null || !videoSource.IsRunning)
             {
                 MessageBox.Show("Camera is niet actief.");
+                isTakingPictures = false;
                 return;
             }
+
             btnTakePictures.Enabled = false;
             capturedPhotos.Clear();
-            photoCount = 0;
+            currentPhotoIndex = 0;
+            totalPhotosToTake = 3;
 
-            photoTimer = new System.Windows.Forms.Timer();
-            int intervalSeconds = (int)numInterval.Value;
-            photoTimer.Interval = intervalSeconds * 1000;
-            photoTimer.Tick += PhotoTimer_Tick;
-            photoTimer.Start();
+            SendCountdownToArduino();
         }
-
-        private void PhotoTimer_Tick(object? sender, EventArgs e)
+        private void CapturePhoto()
         {
             if (videoSource == null || pictureBox1.Image == null) return;
 
-            // Capture huidige frame
             Bitmap photo = new Bitmap(pictureBox1.Image);
             capturedPhotos.Add(photo);
             PlayClickSound();
-            photoCount++;
+        }
 
-            if (photoCount >= 3)
+        private void SendCountdownToArduino()
+        {
+            if (serialPort?.IsOpen == true && currentPhotoIndex < totalPhotosToTake)
             {
-                photoTimer?.Stop();
-                photoTimer?.Dispose();
-                photoTimer = null;
-
-                CombinePhotosIntoStrip();
+                serialPort.WriteLine("COUNTDOWN");
             }
         }
+
         private void CombinePhotosIntoStrip()
         {
             if (capturedPhotos.Count < 3) return;
@@ -264,35 +268,30 @@ namespace PhotoMaticAa
             }
         }
 
-        private void StartCountdown()
-        {
-            if (serialPort?.IsOpen == true)
-            {
-                serialPort.WriteLine("COUNTDOWN");
-            }
-
-            // eventueel kleine delay om countdown synchroon te houden
-            Task.Delay(3000).ContinueWith(_ =>
-            {
-                BeginInvoke(() =>
-                {
-                    btnTakePictures.PerformClick(); // maak foto na 3 seconden
-                });
-            });
-        }
-
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             string data = serialPort.ReadLine().Trim();
 
-            if (data == "PHOTO")
+            if (data == "READY")
             {
-                this.BeginInvoke(new Action(() =>
+                this.BeginInvoke(new Action(async () =>
                 {
-                    TakeSinglePicture(); // 1 foto per trigger
-                }));
+                    CapturePhoto();
+                    currentPhotoIndex++;
 
-                serialPort.WriteLine("OK");
+                    if (currentPhotoIndex < totalPhotosToTake)
+                    {
+                        int intervalSeconds = (int)numInterval.Value;
+                        await Task.Delay(intervalSeconds * 1000);
+                        SendCountdownToArduino();
+                    }
+                    else
+                    {
+                        CombinePhotosIntoStrip();
+                        btnTakePictures.Enabled = true;
+                        isTakingPictures = false; // geef foto maken vrij
+                    }
+                }));
             }
         }
         private void numInterval_ValueChanged(object sender, EventArgs e)
