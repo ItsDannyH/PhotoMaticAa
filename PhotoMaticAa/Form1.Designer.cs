@@ -42,14 +42,18 @@
             label2 = new Label();
             label1 = new Label();
             groupBox2 = new GroupBox();
+            numericUpDown1 = new NumericUpDown();
             radioBtnClick = new RadioButton();
             radioBtnMic = new RadioButton();
             label6 = new Label();
+            label7 = new Label();
+            label8 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numIntervalPic).BeginInit();
             groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDown1).BeginInit();
             SuspendLayout();
             // 
             // pictureBox1
@@ -187,6 +191,9 @@
             // 
             // groupBox2
             // 
+            groupBox2.Controls.Add(label8);
+            groupBox2.Controls.Add(label7);
+            groupBox2.Controls.Add(numericUpDown1);
             groupBox2.Controls.Add(radioBtnClick);
             groupBox2.Controls.Add(radioBtnMic);
             groupBox2.Location = new Point(488, 494);
@@ -195,6 +202,15 @@
             groupBox2.TabIndex = 11;
             groupBox2.TabStop = false;
             groupBox2.Text = "Take Picture";
+            // 
+            // numericUpDown1
+            // 
+            numericUpDown1.Location = new Point(197, 98);
+            numericUpDown1.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numericUpDown1.Name = "numericUpDown1";
+            numericUpDown1.Size = new Size(64, 31);
+            numericUpDown1.TabIndex = 11;
+            numericUpDown1.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // radioBtnClick
             // 
@@ -227,6 +243,24 @@
             label6.TabIndex = 11;
             label6.Text = "Text Input Picture Strip:";
             // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(20, 100);
+            label7.Name = "label7";
+            label7.Size = new Size(123, 25);
+            label7.TabIndex = 12;
+            label7.Text = "Mic Threshold";
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(267, 100);
+            label8.Name = "label8";
+            label8.Size = new Size(27, 25);
+            label8.TabIndex = 13;
+            label8.Text = "%";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
@@ -249,6 +283,7 @@
             ((System.ComponentModel.ISupportInitialize)numIntervalPic).EndInit();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDown1).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -272,5 +307,8 @@
         private RadioButton radioBtnClick;
         private RadioButton radioBtnMic;
         private Label label6;
+        private NumericUpDown numericUpDown1;
+        private Label label8;
+        private Label label7;
     }
 }

@@ -52,7 +52,7 @@ namespace PhotoMaticAa
             radioBtnClick.CheckedChanged += RadioButtons_CheckedChanged;
 
             // Stel standaard trigger in
-            radioBtnMic.Checked = true;
+            radioBtnClick.Checked = true;
 
             UpdateTriggerMode(); // zet juiste trigger op basis van radio buttons
 
@@ -104,20 +104,23 @@ namespace PhotoMaticAa
         }
         private void StartMicrophone(int deviceIndex = 0)
         {
-            if (waveIn != null)
+            if (radioBtnMic.Checked)
             {
-                waveIn.DataAvailable -= WaveIn_DataAvailable;
-                waveIn.StopRecording();
-                waveIn.Dispose();
-            }
+                if (waveIn != null)
+                {
+                    waveIn.DataAvailable -= WaveIn_DataAvailable;
+                    waveIn.StopRecording();
+                    waveIn.Dispose();
+                }
 
-            waveIn = new WaveInEvent
-            {
-                DeviceNumber = deviceIndex,
-                WaveFormat = new WaveFormat(44100, 1)
-            };
-            waveIn.DataAvailable += WaveIn_DataAvailable;
-            waveIn.StartRecording();
+                waveIn = new WaveInEvent
+                {
+                    DeviceNumber = deviceIndex,
+                    WaveFormat = new WaveFormat(44100, 1)
+                };
+                waveIn.DataAvailable += WaveIn_DataAvailable;
+                waveIn.StartRecording();
+            }
         }
         private void StopMicrophone()
         {
@@ -137,13 +140,15 @@ namespace PhotoMaticAa
                 int maxVolume = 0;
                 for (int i = 0; i < e.BytesRecorded; i += 2)
                 {
-                    short sample = (short)((e.Buffer[i + 1] << 8) | e.Buffer[i]);
+                    if (i + 1 >= e.BytesRecorded) break; // voorkom index out of range
+
+                    short sample = BitConverter.ToInt16(e.Buffer, i);
+
                     maxVolume = Math.Max(maxVolume, Math.Abs(sample));
                 }
 
                 int volumeLevel = (int)((float)maxVolume / short.MaxValue * 100);
 
-                // Update UI met microfoonvolume
                 this.BeginInvoke(new Action(() =>
                 {
                     progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
@@ -153,13 +158,11 @@ namespace PhotoMaticAa
                 {
                     isTriggered = true;
 
-                    // Start actie bij trigger
                     this.BeginInvoke(() =>
                     {
-                        TakePicture();   // activeer foto reeks
+                        TakePicture();
                     });
 
-                    // Cooldown wachten
                     Task.Run(async () =>
                     {
                         await Task.Delay(cooldownTime);
@@ -303,6 +306,19 @@ namespace PhotoMaticAa
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             string data = serialPort.ReadLine().Trim();
+            Console.WriteLine("Ontvangen via COM: " + data); // debug
+
+            if (data == "BUTTON")
+            {
+                this.BeginInvoke(() =>
+                {
+                    if (radioBtnClick.Checked) // alleen als klik-modus aanstaat
+                    {
+                        TakePicture(); // zelfde functie als digitale knop
+                    }
+                });
+            }
+
 
             if (data == "READY")
             {
@@ -313,19 +329,21 @@ namespace PhotoMaticAa
 
                     if (currentPhotoIndex < totalPhotosToTake)
                     {
-                        int intervalSeconds = (int)numIntervalLed.Value;
-                        await Task.Delay(intervalSeconds * 1000);
+                        int intervalLed = (int)(numIntervalLed.Value * 1000);
+                        int intervalPic = (int)(numIntervalPic.Value * 1000);
+                        await Task.Delay(intervalPic);
                         SendCountdownToArduino();
                     }
                     else
                     {
                         CombinePhotosIntoStrip();
                         btnTakePictures.Enabled = true;
-                        isTakingPictures = false; // geef foto maken vrij
+                        isTakingPictures = false;
                     }
                 }));
             }
         }
+
 
         private void Interval_ValueChanged(object sender, EventArgs e)
         {
@@ -379,13 +397,13 @@ namespace PhotoMaticAa
         {
             if (radioBtnMic.Checked)
             {
-                StartMicrophone(); // activeer mic
-                btnTakePictures.Enabled = false; // verberg handmatige knop als mic actief is
+                StartMicrophone();        // microfoon aanzetten
+                btnTakePictures.Enabled = false;  // handmatige knop uitzetten
             }
             else
             {
-                StopMicrophone(); // mic uit
-                btnTakePictures.Enabled = true;
+                StopMicrophone();         // microfoon stoppen
+                btnTakePictures.Enabled = true;   // handmatige knop aanzetten
             }
         }
 
