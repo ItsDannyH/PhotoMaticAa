@@ -3,20 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\photomaticaa\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|c:\\users\\danny\\source\\repos\\photomaticaa\\photomaticaa\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|solutionrelative:photomaticaa\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|c:\\users\\danny\\source\\repos\\photomaticaa\\photomaticaa\\properties\\resources.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}",
-      "RelativeMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|solutionrelative:photomaticaa\\properties\\resources.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|c:\\users\\danny\\source\\repos\\photomaticaa\\photomaticaa\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|solutionrelative:photomaticaa\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|c:\\users\\danny\\source\\repos\\photomaticaa\\photomaticaa\\photomaticaa.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|solutionrelative:photomaticaa\\photomaticaa.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|c:\\users\\danny\\source\\repos\\photomaticaa\\photomaticaa\\fullscreenpreviewform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{18ACDEEC-3E70-4FD3-AC81-4AB17C9C1D22}|PhotoMaticAa\\PhotoMaticAa.csproj|solutionrelative:photomaticaa\\fullscreenpreviewform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,40 +34,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "PhotoMaticAa.csproj",
-              "DocumentMoniker": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
-              "RelativeDocumentMoniker": "PhotoMaticAa\\PhotoMaticAa.csproj",
-              "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
-              "RelativeToolTip": "PhotoMaticAa\\PhotoMaticAa.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-05-14T09:33:36.325Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Resources.resx",
-              "DocumentMoniker": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Properties\\Resources.resx",
-              "RelativeDocumentMoniker": "PhotoMaticAa\\Properties\\Resources.resx",
-              "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Properties\\Resources.resx",
-              "RelativeToolTip": "PhotoMaticAa\\Properties\\Resources.resx",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
-              "WhenOpened": "2025-05-14T09:12:15.203Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "Form1.cs",
-              "DocumentMoniker": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Form1.cs",
-              "RelativeDocumentMoniker": "PhotoMaticAa\\Form1.cs",
-              "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Form1.cs",
-              "RelativeToolTip": "PhotoMaticAa\\Form1.cs",
-              "ViewState": "AgIAAEAAAAAAAAAAAAApwFEAAAAAAAAAAAAAAA==",
+              "Title": "FullscreenPreviewForm.cs [Design]",
+              "DocumentMoniker": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\FullscreenPreviewForm.cs",
+              "RelativeDocumentMoniker": "PhotoMaticAa\\FullscreenPreviewForm.cs",
+              "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\FullscreenPreviewForm.cs [Design]",
+              "RelativeToolTip": "PhotoMaticAa\\FullscreenPreviewForm.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-13T08:26:05.125Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-23T08:18:26.117Z",
+              "EditorCaption": " [Design]"
             },
             {
               "$type": "Document",
@@ -82,8 +53,21 @@
               "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Form1.cs [Design]",
               "RelativeToolTip": "PhotoMaticAa\\Form1.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-13T08:19:45.788Z",
+              "WhenOpened": "2025-06-23T08:18:21.107Z",
               "EditorCaption": " [Design]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Form1.cs",
+              "RelativeDocumentMoniker": "PhotoMaticAa\\Form1.cs",
+              "ToolTip": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\Form1.cs",
+              "RelativeToolTip": "PhotoMaticAa\\Form1.cs",
+              "ViewState": "AgIAAEgAAAAAAAAAAAApwFUAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-13T08:26:05.125Z",
+              "EditorCaption": ""
             }
           ]
         }

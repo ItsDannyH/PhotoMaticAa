@@ -33,6 +33,11 @@ namespace PhotoMaticAa
 
         private SerialPort serialPort;
 
+        private bool isFullscreen = false;
+        private bool isInFullscreen = false;
+        private bool isTogglingFullscreen = false;
+        private FullscreenPreviewForm fullscreenForm;
+
         public Form1()
         {
             InitializeComponent();
@@ -41,11 +46,14 @@ namespace PhotoMaticAa
         private void Form1_Load(object sender, EventArgs e)
         {
             this.FormClosing += Form1_FormClosing;
+            pictureBox1.Click += pictureBox1_Click;
             StartCamera();
             StartMicrophone();
             serialPort = new SerialPort("COM3", 9600); // vervang COM3 met juiste poort
             serialPort.Open();
             serialPort.DataReceived += SerialPort_DataReceived;
+            numIntervalLed.ValueChanged += Interval_ValueChanged;
+            numIntervalPic.ValueChanged += Interval_ValueChanged;
         }
         private void PlayClickSound()
         {
@@ -202,7 +210,10 @@ namespace PhotoMaticAa
         {
             if (serialPort?.IsOpen == true && currentPhotoIndex < totalPhotosToTake)
             {
-                serialPort.WriteLine("COUNTDOWN");
+                // interval in ms naar Arduino sturen (led interval)
+                int ledIntervalMs = (int)(numIntervalLed.Value * 1000);
+                string cmd = $"COUNTDOWN;{ledIntervalMs}\n";
+                serialPort.Write(cmd);
             }
         }
 
@@ -281,7 +292,7 @@ namespace PhotoMaticAa
 
                     if (currentPhotoIndex < totalPhotosToTake)
                     {
-                        int intervalSeconds = (int)numInterval.Value;
+                        int intervalSeconds = (int)numIntervalLed.Value;
                         await Task.Delay(intervalSeconds * 1000);
                         SendCountdownToArduino();
                     }
@@ -294,9 +305,53 @@ namespace PhotoMaticAa
                 }));
             }
         }
-        private void numInterval_ValueChanged(object sender, EventArgs e)
-        {
 
+        private void Interval_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateTotalIntervalLabel();
+        }
+        private void UpdateTotalIntervalLabel()
+        {
+            decimal ledInterval = numIntervalLed.Value;
+            decimal pictureInterval = numIntervalPic.Value;
+
+            // 3 keer led interval + picture interval (sec)
+            decimal totalInterval = ledInterval * 3 + pictureInterval;
+
+            lblTotalInt.Text = $"{totalInterval:F1} Sec";
+        }
+        private async void pictureBox1_Click(object sender, EventArgs e)
+        {
+            if (isTogglingFullscreen)
+                return;
+
+            isTogglingFullscreen = true;
+
+            if (fullscreenForm == null || fullscreenForm.IsDisposed)
+            {
+                if (pictureBox1.Image == null)
+                {
+                    isTogglingFullscreen = false;
+                    return;
+                }
+
+                fullscreenForm = new FullscreenPreviewForm(pictureBox1.Image);
+                fullscreenForm.FormClosed += FullscreenForm_FormClosed;
+                fullscreenForm.Show();
+            }
+            else
+            {
+                fullscreenForm.Close();
+                fullscreenForm = null;
+            }
+
+            await Task.Delay(300);
+            isTogglingFullscreen = false;
+        }
+
+        private void FullscreenForm_FormClosed(object? sender, FormClosedEventArgs e)
+        {
+            fullscreenForm = null;
         }
     }
 }
