@@ -62,6 +62,10 @@
               "target": "Package",
               "version": "[2.2.1, )"
             },
+            "PDFsharp": {
+              "target": "Package",
+              "version": "[6.2.0, )"
+            },
             "System.IO.Ports": {
               "target": "Package",
               "version": "[9.0.5, )"

@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO.Ports;
 using System.Diagnostics;
+using PdfSharp.Pdf;
+using PdfSharp.Drawing;
+using System.Drawing;
 
 
 namespace PhotoMaticAa
@@ -244,36 +247,98 @@ namespace PhotoMaticAa
             }
         }
 
-        private void CombinePhotosIntoStrip()
+        private Bitmap CreateStrip(List<Bitmap> photos)
         {
-            if (capturedPhotos.Count < 3) return;
-
-            int width = capturedPhotos[0].Width;
-            int height = capturedPhotos[0].Height;
+            int width = photos[0].Width;
+            int height = photos[0].Height;
             int margin = 10;
             int textHeight = 40;
 
             Bitmap strip = new Bitmap(width + 2 * margin, height * 3 + margin * 4 + textHeight);
-            using Graphics g = Graphics.FromImage(strip);
-
-            g.Clear(Color.White);
-
-            for (int i = 0; i < 3; i++)
+            using (Graphics g = Graphics.FromImage(strip))
             {
-                g.DrawImage(capturedPhotos[i], margin, margin + i * (height + margin));
-                g.DrawRectangle(Pens.Black, margin, margin + i * (height + margin), width - 1, height - 1);
+                g.Clear(Color.White);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    g.DrawImage(photos[i], margin, margin + i * (height + margin));
+                    g.DrawRectangle(Pens.Black, margin, margin + i * (height + margin), width - 1, height - 1);
+                }
+
+                Font font = new Font("Arial", 12);
+                string customText = txtOndertekst.Text;
+                g.DrawString(customText, font, Brushes.Black, new PointF(margin, strip.Height - textHeight));
+            }
+            return strip;
+        }
+
+        private Bitmap CombineTwoStripsIntoPage(List<Bitmap> photos)
+        {
+            Bitmap strip1 = CreateStrip(photos);
+            Bitmap strip2 = CreateStrip(photos);
+
+            int marginBetween = 20;
+            int pageWidth = strip1.Width * 2 + marginBetween;
+            int pageHeight = strip1.Height;
+
+            Bitmap page = new Bitmap(pageWidth, pageHeight);
+            using (Graphics g = Graphics.FromImage(page))
+            {
+                g.Clear(Color.White);
+                g.DrawImage(strip1, 0, 0);
+                g.DrawImage(strip2, strip1.Width + marginBetween, 0);
             }
 
-            // Voeg tekst toe onderaan
-            Font font = new Font("Arial", 12);
-            string customText = txtOndertekst.Text;
-            g.DrawString(customText, font, Brushes.Black, new PointF(margin, strip.Height - textHeight));
+            return page;
+        }
 
-            // Toon de strip in een nieuwe PictureBox of sla op
-            pictureBox1.Image = strip;
+        private void SaveBitmapAsPdfBackup(Bitmap bitmap, string fileName)
+        {
+            string folderPath = Path.Combine(Application.StartupPath, "strippenbackup");
 
-            // Als je meteen wilt printen:
-            PrintImage(strip);
+            // Maak de map aan als deze nog niet bestaat
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            string filePath = Path.Combine(folderPath, fileName);
+
+            using var document = new PdfDocument();
+            var page = document.AddPage();
+
+            page.Width = XUnit.FromPoint(bitmap.Width);
+            page.Height = XUnit.FromPoint(bitmap.Height);
+
+            using var gfx = XGraphics.FromPdfPage(page);
+
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            ms.Position = 0;
+
+            using var xImage = XImage.FromStream(ms);
+
+            gfx.DrawImage(xImage, 0, 0, bitmap.Width, bitmap.Height);
+
+            document.Save(filePath);
+        }
+
+        private void CombinePhotosIntoStripsAndSave()
+        {
+            if (capturedPhotos.Count < 3) return;
+
+            Bitmap pageBitmap = CombineTwoStripsIntoPage(capturedPhotos);
+
+            // Toon in PictureBox
+            pictureBox1.Image = pageBitmap;
+
+            // Opslaan als PDF (backup)
+            string fileName = $"FotoStrippenBackup_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            SaveBitmapAsPdfBackup(pageBitmap, fileName);
+
+            // Printen
+            PrintImage(pageBitmap);
+
             btnTakePictures.Enabled = true;
         }
         private void PrintImage(Image imageToPrint)
@@ -339,8 +404,7 @@ namespace PhotoMaticAa
                     }
                     else
                     {
-                        CombinePhotosIntoStrip();
-                        btnTakePictures.Enabled = true;
+                        CombinePhotosIntoStripsAndSave();
                         isTakingPictures = false;
                     }
                 }));
