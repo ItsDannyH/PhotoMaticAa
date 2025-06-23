@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO.Ports;
+using System.Diagnostics;
 
 
 namespace PhotoMaticAa
@@ -24,7 +25,7 @@ namespace PhotoMaticAa
 
         private WaveInEvent waveIn;
         private bool isTriggered = false;
-        private int triggerThreshold = 60; // Gevoeligheid (0–100)
+        private int triggerThreshold => (int)numMicThreshold.Value;
         private int cooldownTime = 5000;
 
         private List<Bitmap> capturedPhotos = new();
@@ -55,6 +56,8 @@ namespace PhotoMaticAa
             radioBtnClick.Checked = true;
 
             UpdateTriggerMode(); // zet juiste trigger op basis van radio buttons
+
+            numMicThreshold.ValueChanged += numMicThreshold_ValueChanged;
 
             StartCamera();
             StartMicrophone();
@@ -154,7 +157,7 @@ namespace PhotoMaticAa
                     progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
                 }));
 
-                if (volumeLevel > triggerThreshold && !isTriggered)
+                if (volumeLevel > numMicThreshold.Value && !isTriggered)
                 {
                     isTriggered = true;
 
@@ -407,6 +410,10 @@ namespace PhotoMaticAa
             }
         }
 
+        private void numMicThreshold_ValueChanged(object sender, EventArgs e)
+        {
+            Debug.WriteLine("Microfoon threshold aangepast naar: " + numMicThreshold.Value);
+        }
         private void FullscreenForm_FormClosed(object? sender, FormClosedEventArgs e)
         {
             fullscreenForm = null;
