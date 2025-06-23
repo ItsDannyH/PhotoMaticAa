@@ -1,58 +1,49 @@
-const int ledPins[] = {2, 3, 4}; // LED pins
 const int buttonPin = 5;
-bool lastButtonState = LOW;
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 50;
+bool lastButtonState = HIGH;
 
-int countdownDelayMs = 1000; // tijd tussen LEDs (komt van PC)
-int pictureDelayMs = 1000;   // tijd na laatste LED tot foto
+const int leds[] = {2, 3, 4};
+const int ledCount = sizeof(leds) / sizeof(leds[0]);
 
 void setup() {
-  Serial.begin(9600);
-  for (int i = 0; i < 3; i++) {
-    pinMode(ledPins[i], OUTPUT);
-    digitalWrite(ledPins[i], LOW);
-  }
   pinMode(buttonPin, INPUT_PULLUP);
+  Serial.begin(9600);
+
+  for (int i = 0; i < ledCount; i++) {
+    pinMode(leds[i], OUTPUT);
+    digitalWrite(leds[i], LOW);
+  }
 }
 
 void loop() {
-  // Check op knopdruk
-  int reading = digitalRead(buttonPin);
-  if (reading == LOW && lastButtonState == HIGH && (millis() - lastDebounceTime) > debounceDelay) {
-    lastDebounceTime = millis();
-    handleCountdown();
+  // Check fysieke knop
+  bool currentState = digitalRead(buttonPin);
+  if (lastButtonState == HIGH && currentState == LOW) {
+    Serial.println("BUTTON");
+    delay(300); // debounce
   }
-  lastButtonState = reading;
+  lastButtonState = currentState;
 
-  // Check op seriële input van PC
+  // Lees seriële input
   if (Serial.available()) {
-    String cmd = Serial.readStringUntil('\n');
-    cmd.trim();
-    if (cmd.startsWith("COUNTDOWN")) {
-      // Parse optioneel extra interval: "COUNTDOWN 1000 200"
-      int space1 = cmd.indexOf(' ');
-      if (space1 > 0) {
-        int space2 = cmd.indexOf(' ', space1 + 1);
-        countdownDelayMs = cmd.substring(space1 + 1, space2).toInt();
-        pictureDelayMs = cmd.substring(space2 + 1).toInt();
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+
+    if (input.startsWith("COUNTDOWN;")) {
+      int intervalMs = input.substring(10).toInt();
+
+      // LED countdown met aanhouden aan
+      for (int i = 0; i < ledCount; i++) {
+        digitalWrite(leds[i], HIGH);
+        delay(intervalMs);
       }
-      handleCountdown();
+
+      // Zet alle LED's uit na countdown
+      for (int i = 0; i < ledCount; i++) {
+        digitalWrite(leds[i], LOW);
+      }
+
+      delay(100);
+      Serial.println("READY");
     }
-  }
-}
-
-void handleCountdown() {
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(ledPins[i], HIGH);
-    delay(countdownDelayMs);
-  }
-
-  delay(pictureDelayMs); // Wacht na laatste LED
-  Serial.println("READY");
-
-  // LEDs uit na foto
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(ledPins[i], LOW);
   }
 }
