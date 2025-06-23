@@ -47,11 +47,22 @@ namespace PhotoMaticAa
         {
             this.FormClosing += Form1_FormClosing;
             pictureBox1.Click += pictureBox1_Click;
+
+            radioBtnMic.CheckedChanged += RadioButtons_CheckedChanged;
+            radioBtnClick.CheckedChanged += RadioButtons_CheckedChanged;
+
+            // Stel standaard trigger in
+            radioBtnMic.Checked = true;
+
+            UpdateTriggerMode(); // zet juiste trigger op basis van radio buttons
+
             StartCamera();
             StartMicrophone();
+
             serialPort = new SerialPort("COM3", 9600); // vervang COM3 met juiste poort
             serialPort.Open();
             serialPort.DataReceived += SerialPort_DataReceived;
+            
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
         }
@@ -107,6 +118,16 @@ namespace PhotoMaticAa
             };
             waveIn.DataAvailable += WaveIn_DataAvailable;
             waveIn.StartRecording();
+        }
+        private void StopMicrophone()
+        {
+            if (waveIn != null)
+            {
+                waveIn.DataAvailable -= WaveIn_DataAvailable;
+                waveIn.StopRecording();
+                waveIn.Dispose();
+                waveIn = null;
+            }
         }
 
         private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
@@ -347,6 +368,25 @@ namespace PhotoMaticAa
 
             await Task.Delay(300);
             isTogglingFullscreen = false;
+        }
+
+        private void RadioButtons_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateTriggerMode();
+        }
+
+        private void UpdateTriggerMode()
+        {
+            if (radioBtnMic.Checked)
+            {
+                StartMicrophone(); // activeer mic
+                btnTakePictures.Enabled = false; // verberg handmatige knop als mic actief is
+            }
+            else
+            {
+                StopMicrophone(); // mic uit
+                btnTakePictures.Enabled = true;
+            }
         }
 
         private void FullscreenForm_FormClosed(object? sender, FormClosedEventArgs e)
