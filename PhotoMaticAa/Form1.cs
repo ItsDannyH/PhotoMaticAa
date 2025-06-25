@@ -44,6 +44,8 @@ namespace PhotoMaticAa
 
         private Bitmap backgroundImage;
 
+        private Font selectedFont = new Font("Arial", 12);
+
         public Form1()
         {
             InitializeComponent();
@@ -110,7 +112,7 @@ namespace PhotoMaticAa
 
             try
             {
-                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
+                videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
                 videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
                 videoSource.Start();
             }
@@ -282,7 +284,7 @@ namespace PhotoMaticAa
                     g.DrawRectangle(Pens.Black, margin, margin + i * (height + margin), width - 1, height - 1);
                 }
 
-                Font font = new Font("Arial", 12);
+                Font font = selectedFont;
                 string customText = txtOndertekst.Text;
                 g.DrawString(customText, font, Brushes.Black, new PointF(margin, strip.Height - textHeight));
             }
@@ -533,6 +535,17 @@ namespace PhotoMaticAa
             {
                 backgroundImage = new Bitmap(openFileDialog.FileName);
                 MessageBox.Show("Achtergrond geladen!");
+            }
+        }
+
+        private void btnSelectFont_Click(object sender, EventArgs e)
+        {
+            fontDialog1.Font = selectedFont;
+
+            if (fontDialog1.ShowDialog() == DialogResult.OK)
+            {
+                selectedFont = fontDialog1.Font;
+                MessageBox.Show($"Lettertype ingesteld op: {selectedFont.Name}, grootte: {selectedFont.Size}");
             }
         }
 

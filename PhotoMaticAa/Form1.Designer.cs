@@ -49,12 +49,16 @@
             radioBtnMic = new RadioButton();
             label6 = new Label();
             btnSelectBackground = new Button();
+            groupBox3 = new GroupBox();
+            btnSelectFont = new Button();
+            fontDialog1 = new FontDialog();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numIntervalPic).BeginInit();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).BeginInit();
+            groupBox3.SuspendLayout();
             SuspendLayout();
             // 
             // pictureBox1
@@ -264,20 +268,41 @@
             // 
             // btnSelectBackground
             // 
-            btnSelectBackground.Location = new Point(336, 508);
+            btnSelectBackground.Location = new Point(6, 30);
             btnSelectBackground.Name = "btnSelectBackground";
-            btnSelectBackground.Size = new Size(312, 34);
+            btnSelectBackground.Size = new Size(288, 34);
             btnSelectBackground.TabIndex = 12;
             btnSelectBackground.Text = "Import Background";
             btnSelectBackground.UseVisualStyleBackColor = true;
             btnSelectBackground.Click += btnSelectBackground_Click;
+            // 
+            // groupBox3
+            // 
+            groupBox3.Controls.Add(btnSelectFont);
+            groupBox3.Controls.Add(btnSelectBackground);
+            groupBox3.Location = new Point(336, 494);
+            groupBox3.Name = "groupBox3";
+            groupBox3.Size = new Size(300, 150);
+            groupBox3.TabIndex = 11;
+            groupBox3.TabStop = false;
+            groupBox3.Text = "Style";
+            // 
+            // btnSelectFont
+            // 
+            btnSelectFont.Location = new Point(6, 70);
+            btnSelectFont.Name = "btnSelectFont";
+            btnSelectFont.Size = new Size(288, 34);
+            btnSelectFont.TabIndex = 13;
+            btnSelectFont.Text = "Kies Lettertype";
+            btnSelectFont.UseVisualStyleBackColor = true;
+            btnSelectFont.Click += btnSelectFont_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1016, 735);
-            Controls.Add(btnSelectBackground);
+            Controls.Add(groupBox3);
             Controls.Add(label6);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
@@ -296,6 +321,7 @@
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).EndInit();
+            groupBox3.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -323,5 +349,8 @@
         private Label label8;
         private Label label7;
         private Button btnSelectBackground;
+        private GroupBox groupBox3;
+        private Button btnSelectFont;
+        private FontDialog fontDialog1;
     }
 }
