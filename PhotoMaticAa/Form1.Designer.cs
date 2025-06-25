@@ -48,6 +48,7 @@
             radioBtnClick = new RadioButton();
             radioBtnMic = new RadioButton();
             label6 = new Label();
+            btnSelectBackground = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
@@ -58,9 +59,9 @@
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(30, 12);
+            pictureBox1.Location = new Point(36, 12);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(758, 398);
+            pictureBox1.Size = new Size(924, 398);
             pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
@@ -80,7 +81,7 @@
             // 
             txtOndertekst.Location = new Point(30, 457);
             txtOndertekst.Name = "txtOndertekst";
-            txtOndertekst.Size = new Size(758, 31);
+            txtOndertekst.Size = new Size(924, 31);
             txtOndertekst.TabIndex = 2;
             // 
             // numIntervalLed
@@ -98,7 +99,7 @@
             // 
             // progressBarMic
             // 
-            progressBarMic.Location = new Point(607, 679);
+            progressBarMic.Location = new Point(749, 677);
             progressBarMic.Name = "progressBarMic";
             progressBarMic.RightToLeft = RightToLeft.Yes;
             progressBarMic.Size = new Size(205, 21);
@@ -196,7 +197,7 @@
             groupBox2.Controls.Add(numMicThreshold);
             groupBox2.Controls.Add(radioBtnClick);
             groupBox2.Controls.Add(radioBtnMic);
-            groupBox2.Location = new Point(488, 494);
+            groupBox2.Location = new Point(654, 494);
             groupBox2.Name = "groupBox2";
             groupBox2.Size = new Size(300, 150);
             groupBox2.TabIndex = 11;
@@ -261,11 +262,22 @@
             label6.TabIndex = 11;
             label6.Text = "Text Input Picture Strip:";
             // 
+            // btnSelectBackground
+            // 
+            btnSelectBackground.Location = new Point(336, 508);
+            btnSelectBackground.Name = "btnSelectBackground";
+            btnSelectBackground.Size = new Size(312, 34);
+            btnSelectBackground.TabIndex = 12;
+            btnSelectBackground.Text = "Import Background";
+            btnSelectBackground.UseVisualStyleBackColor = true;
+            btnSelectBackground.Click += btnSelectBackground_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(854, 735);
+            ClientSize = new Size(1016, 735);
+            Controls.Add(btnSelectBackground);
             Controls.Add(label6);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
@@ -310,5 +322,6 @@
         private NumericUpDown numMicThreshold;
         private Label label8;
         private Label label7;
+        private Button btnSelectBackground;
     }
 }

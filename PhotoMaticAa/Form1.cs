@@ -42,6 +42,8 @@ namespace PhotoMaticAa
         private bool isTogglingFullscreen = false;
         private FullscreenPreviewForm fullscreenForm;
 
+        private Bitmap backgroundImage;
+
         public Form1()
         {
             InitializeComponent();
@@ -266,8 +268,10 @@ namespace PhotoMaticAa
             int height = photos[0].Height;
             int margin = 10;
             int textHeight = 40;
+            int extraMargin = 20;
 
-            Bitmap strip = new Bitmap(width + 2 * margin, height * 3 + margin * 4 + textHeight);
+
+            Bitmap strip = new Bitmap(width + 2 * (margin + extraMargin), height * 3 + margin * 4 + textHeight + 2 * extraMargin);
             using (Graphics g = Graphics.FromImage(strip))
             {
                 g.Clear(Color.White);
@@ -297,15 +301,25 @@ namespace PhotoMaticAa
             Bitmap page = new Bitmap(pageWidth, pageHeight);
             using (Graphics g = Graphics.FromImage(page))
             {
-                g.Clear(Color.White);
+                if (backgroundImage != null)
+                {
+                    g.DrawImage(backgroundImage, 0, 0, pageWidth, pageHeight);
+                }
+                else
+                {
+                    g.Clear(Color.White); // fallback
+                }
+
                 g.DrawImage(strip1, 0, 0);
-                g.DrawImage(strip2, strip1.Width + marginBetween, 0);
+                g.DrawImage(strip2, strip1.Width + marginBetween + 0, 0);
             }
+
 
             return page;
         }
         private void DrawCenteredImage(Graphics g, Image image, Rectangle bounds)
         {
+
             double ratioX = (double)bounds.Width / image.Width;
             double ratioY = (double)bounds.Height / image.Height;
             double ratio = Math.Min(ratioX, ratioY);
@@ -315,6 +329,9 @@ namespace PhotoMaticAa
 
             int posX = bounds.X + (bounds.Width - newWidth) / 2;
             int posY = bounds.Y + (bounds.Height - newHeight) / 2;
+
+
+
 
             g.DrawImage(image, posX, posY, newWidth, newHeight);
         }
@@ -506,5 +523,18 @@ namespace PhotoMaticAa
         {
             fullscreenForm = null;
         }
+
+        private void btnSelectBackground_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Afbeeldingen|*.jpg;*.png;*.bmp";
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                backgroundImage = new Bitmap(openFileDialog.FileName);
+                MessageBox.Show("Achtergrond geladen!");
+            }
+        }
+
     }
 }
