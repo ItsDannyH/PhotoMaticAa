@@ -65,10 +65,18 @@ namespace PhotoMaticAa
             StartCamera();
             StartMicrophone();
 
-            serialPort = new SerialPort("COM3", 9600); // vervang COM3 met juiste poort
-            serialPort.Open();
-            serialPort.DataReceived += SerialPort_DataReceived;
-            
+            try
+            {
+                serialPort = new SerialPort("COM3", 9600);
+                serialPort.Open();
+                serialPort.DataReceived += SerialPort_DataReceived;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verbinden met Arduino (COM-poort): " + ex.Message);
+            }
+
+
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
         }
@@ -90,42 +98,47 @@ namespace PhotoMaticAa
 
         private void StartCamera()
         {
-            // Zoek beschikbare camera's
             videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
 
             if (videoDevices.Count == 0)
             {
-                MessageBox.Show("Geen camera gevonden!");
+                MessageBox.Show("Geen camera gevonden. Controleer of je webcam is aangesloten.");
                 return;
             }
 
-            // Kies de eerste camera
-            videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
-
-            // Elke frame verwerken
-            videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
-
-            // Start camera
-            videoSource.Start();
+            try
+            {
+                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
+                videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
+                videoSource.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij het starten van de camera: " + ex.Message);
+            }
         }
+
         private void StartMicrophone(int deviceIndex = 0)
         {
             if (radioBtnMic.Checked)
             {
-                if (waveIn != null)
+                try
                 {
-                    waveIn.DataAvailable -= WaveIn_DataAvailable;
-                    waveIn.StopRecording();
-                    waveIn.Dispose();
-                }
+                    waveIn?.StopRecording();
+                    waveIn?.Dispose();
 
-                waveIn = new WaveInEvent
+                    waveIn = new WaveInEvent
+                    {
+                        DeviceNumber = deviceIndex,
+                        WaveFormat = new WaveFormat(44100, 1)
+                    };
+                    waveIn.DataAvailable += WaveIn_DataAvailable;
+                    waveIn.StartRecording();
+                }
+                catch (Exception ex)
                 {
-                    DeviceNumber = deviceIndex,
-                    WaveFormat = new WaveFormat(44100, 1)
-                };
-                waveIn.DataAvailable += WaveIn_DataAvailable;
-                waveIn.StartRecording();
+                    MessageBox.Show("Microfoon kon niet worden gestart: " + ex.Message);
+                }
             }
         }
         private void StopMicrophone()
@@ -291,24 +304,35 @@ namespace PhotoMaticAa
 
             return page;
         }
+        private void DrawCenteredImage(Graphics g, Image image, Rectangle bounds)
+        {
+            double ratioX = (double)bounds.Width / image.Width;
+            double ratioY = (double)bounds.Height / image.Height;
+            double ratio = Math.Min(ratioX, ratioY);
+
+            int newWidth = (int)(image.Width * ratio);
+            int newHeight = (int)(image.Height * ratio);
+
+            int posX = bounds.X + (bounds.Width - newWidth) / 2;
+            int posY = bounds.Y + (bounds.Height - newHeight) / 2;
+
+            g.DrawImage(image, posX, posY, newWidth, newHeight);
+        }
+
 
         private void SaveBitmapAsPdfBackup(Bitmap bitmap, string fileName)
         {
             string folderPath = Path.Combine(Application.StartupPath, "strippenbackup");
-
-            // Maak de map aan als deze nog niet bestaat
-            if (!Directory.Exists(folderPath))
-            {
-                Directory.CreateDirectory(folderPath);
-            }
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
 
             string filePath = Path.Combine(folderPath, fileName);
 
             using var document = new PdfDocument();
             var page = document.AddPage();
 
-            page.Width = XUnit.FromPoint(bitmap.Width);
-            page.Height = XUnit.FromPoint(bitmap.Height);
+            // Stel paginaformaat in (A4 bijv.)
+            page.Size = PdfSharp.PageSize.A4;
+            page.Orientation = PdfSharp.PageOrientation.Portrait;
 
             using var gfx = XGraphics.FromPdfPage(page);
 
@@ -318,8 +342,17 @@ namespace PhotoMaticAa
 
             using var xImage = XImage.FromStream(ms);
 
-            gfx.DrawImage(xImage, 0, 0, bitmap.Width, bitmap.Height);
+            double ratioX = page.Width.Point / bitmap.Width;
+            double ratioY = page.Height.Point / bitmap.Height;
+            double ratio = Math.Min(ratioX, ratioY);
 
+            double width = bitmap.Width * ratio;
+            double height = bitmap.Height * ratio;
+
+            double x = (page.Width.Point - width) / 2;
+            double y = (page.Height.Point - height) / 2;
+
+            gfx.DrawImage(xImage, x, y, width, height);
             document.Save(filePath);
         }
 
@@ -347,18 +380,8 @@ namespace PhotoMaticAa
             printDoc.PrintPage += (s, e) =>
             {
                 Rectangle m = e.MarginBounds;
-
-                // Zorg dat de afbeelding in de marges past
-                if ((double)imageToPrint.Width / (double)imageToPrint.Height > (double)m.Width / (double)m.Height)
-                {
-                    m.Height = (int)((double)imageToPrint.Height / imageToPrint.Width * m.Width);
-                }
-                else
-                {
-                    m.Width = (int)((double)imageToPrint.Width / imageToPrint.Height * m.Height);
-                }
-
-                e.Graphics.DrawImage(imageToPrint, m);
+                DrawCenteredImage(e.Graphics, imageToPrint, m);
+                e.HasMorePages = false;
             };
 
             try
@@ -370,6 +393,7 @@ namespace PhotoMaticAa
                 MessageBox.Show("Fout bij printen: " + ex.Message);
             }
         }
+
 
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
