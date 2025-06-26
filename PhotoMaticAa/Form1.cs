@@ -37,14 +37,20 @@ namespace PhotoMaticAa
 
         private SerialPort serialPort;
 
+        private System.Drawing.Point pictureBox1OriginalLocation;
+        private System.Drawing.Size pictureBox1OriginalSize;
+
         private bool isFullscreen = false;
-        private bool isInFullscreen = false;
         private bool isTogglingFullscreen = false;
-        private FullscreenPreviewForm fullscreenForm;
 
         private Bitmap backgroundImage;
 
         private Font selectedFont = new Font("Arial", 12);
+
+        private Panel pnlVolumeTrackBackground;
+        private Panel pnlVolumeTrackLevel;
+        private Panel pnlVolumeThresholdLine;
+
 
         public Form1()
         {
@@ -68,6 +74,9 @@ namespace PhotoMaticAa
 
             StartCamera();
             StartMicrophone();
+
+            pictureBox1OriginalLocation = pictureBox1.Location;
+            pictureBox1OriginalSize = pictureBox1.Size;
 
             try
             {
@@ -171,22 +180,18 @@ namespace PhotoMaticAa
                 }
 
                 int volumeLevel = (int)((float)maxVolume / short.MaxValue * 100);
-
-                this.BeginInvoke(() =>
+                if (isFullscreen && pnlVolumeTrackLevel != null && pnlVolumeTrackBackground != null)
                 {
-                    progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
-
-                    try
+                    this.BeginInvoke(() =>
                     {
-                        if (fullscreenForm != null && !fullscreenForm.IsDisposed)
-                            fullscreenForm.UpdateVolumeBar(volumeLevel);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Fout bij UpdateVolumeBar: " + ex.Message);
-                    }
+                        int maxHeight = pnlVolumeTrackBackground.Height;
+                        int barHeight = (int)(maxHeight * (volumeLevel / 100.0));
+                        if (barHeight < 1) barHeight = 1;
 
-                });
+                        pnlVolumeTrackLevel.Height = barHeight;
+                        pnlVolumeTrackLevel.Top = pnlVolumeTrackBackground.Height - barHeight;
+                    });
+                }
 
                 if (volumeLevel > numMicThreshold.Value && !isTriggered)
                 {
@@ -519,28 +524,90 @@ namespace PhotoMaticAa
 
             isTogglingFullscreen = true;
 
-            if (fullscreenForm == null || fullscreenForm.IsDisposed)
+            if (!isFullscreen)
             {
-                if (pictureBox1.Image == null)
-                {
-                    isTogglingFullscreen = false;
-                    return;
-                }
-
-                fullscreenForm = new FullscreenPreviewForm(pictureBox1.Image);
-                fullscreenForm.SetThreshold((int)numMicThreshold.Value);
-
-                fullscreenForm.FormClosed += FullscreenForm_FormClosed;
-                fullscreenForm.Show();
+                EnterFullscreen();
             }
             else
             {
-                fullscreenForm.Close();
-                fullscreenForm = null;
+                ExitFullscreen();
             }
 
             await Task.Delay(300);
             isTogglingFullscreen = false;
+        }
+        private void EnterFullscreen()
+        {
+            isFullscreen = true;
+
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+
+            pictureBox1.Location = new Point(0, 0);
+            pictureBox1.Size = this.ClientSize;
+
+            int margin = 20;
+            int barWidth = 30;
+            int barHeight = (int)(this.ClientSize.Height * 0.8);
+            int barTop = (this.ClientSize.Height - barHeight) / 2;
+            int barLeft = this.ClientSize.Width - barWidth - margin;
+
+            // Achtergrond
+            pnlVolumeTrackBackground = new Panel
+            {
+                Width = barWidth,
+                Height = barHeight,
+                Left = barLeft,
+                Top = barTop,
+                BackColor = Color.DarkGray
+            };
+            this.Controls.Add(pnlVolumeTrackBackground);
+            pnlVolumeTrackBackground.BringToFront();
+
+            // Groene volume-balk
+            pnlVolumeTrackLevel = new Panel
+            {
+                Width = barWidth,
+                Height = 0,
+                Left = 0,
+                Top = pnlVolumeTrackBackground.Height,
+                BackColor = Color.LimeGreen,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            pnlVolumeTrackBackground.Controls.Add(pnlVolumeTrackLevel);
+
+            // Threshold-lijn
+            pnlVolumeThresholdLine = new Panel
+            {
+                Width = barWidth,
+                Height = 2,
+                Left = 0,
+                BackColor = Color.Red,
+                Top = GetThresholdTopPosition()
+            };
+            pnlVolumeTrackBackground.Controls.Add(pnlVolumeThresholdLine);
+
+            pnlVolumeTrackBackground.Visible = true;
+        }
+
+        private void ExitFullscreen()
+        {
+            isFullscreen = false;
+
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.WindowState = FormWindowState.Normal;
+
+            pictureBox1.Location = pictureBox1OriginalLocation;
+            pictureBox1.Size = pictureBox1OriginalSize;
+
+            if (pnlVolumeTrackBackground != null)
+            {
+                this.Controls.Remove(pnlVolumeTrackBackground);
+                pnlVolumeTrackBackground.Dispose();
+                pnlVolumeTrackBackground = null;
+                pnlVolumeTrackLevel = null;
+                pnlVolumeThresholdLine = null;
+            }
         }
 
         private void RadioButtons_CheckedChanged(object sender, EventArgs e)
@@ -564,16 +631,11 @@ namespace PhotoMaticAa
 
         private void numMicThreshold_ValueChanged(object sender, EventArgs e)
         {
-            Debug.WriteLine("Microfoon threshold aangepast naar: " + numMicThreshold.Value);
-
-            if (fullscreenForm != null && !fullscreenForm.IsDisposed)
+            if (isFullscreen && pnlVolumeThresholdLine != null && pnlVolumeTrackBackground != null)
             {
-                fullscreenForm.SetThreshold((int)numMicThreshold.Value);
+                pnlVolumeThresholdLine.Top = GetThresholdTopPosition();
             }
-        }
-        private void FullscreenForm_FormClosed(object? sender, FormClosedEventArgs e)
-        {
-            fullscreenForm = null;
+
         }
 
         private void btnSelectBackground_Click(object sender, EventArgs e)
@@ -599,5 +661,12 @@ namespace PhotoMaticAa
             }
         }
 
+        private int GetThresholdTopPosition()
+        {
+            int maxHeight = pnlVolumeTrackBackground.Height;
+            double ratio = (double)numMicThreshold.Value / 100.0;
+            int lineY = (int)(maxHeight * (1 - ratio));
+            return lineY;
+        }
     }
 }

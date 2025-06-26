@@ -52,7 +52,6 @@ C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\r
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.csproj.AssemblyReference.cache
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.Form1.resources
-C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.FullscreenPreviewForm.resources
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.Properties.Resources.resources
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.csproj.GenerateResource.cache
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\obj\Debug\net8.0-windows\PhotoMaticAa.GeneratedMSBuildEditorConfig.editorconfig

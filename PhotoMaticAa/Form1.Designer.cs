@@ -302,6 +302,7 @@
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1016, 735);
+            Controls.Add(pictureBox1);
             Controls.Add(groupBox3);
             Controls.Add(label6);
             Controls.Add(groupBox2);
@@ -309,7 +310,6 @@
             Controls.Add(progressBarMic);
             Controls.Add(txtOndertekst);
             Controls.Add(btnTakePictures);
-            Controls.Add(pictureBox1);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;

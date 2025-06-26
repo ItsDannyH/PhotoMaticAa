@@ -1,0 +1,8 @@
+C:\Users\danny\Documents\PhotomaticAA build\PhotoMaticAa.pdb
+C:\Users\danny\Documents\PhotomaticAA build\sounds\camera.wav
+C:\Users\danny\Documents\PhotomaticAA build\D3DCompiler_47_cor3.dll
+C:\Users\danny\Documents\PhotomaticAA build\PenImc_cor3.dll
+C:\Users\danny\Documents\PhotomaticAA build\PresentationNative_cor3.dll
+C:\Users\danny\Documents\PhotomaticAA build\vcruntime140_cor3.dll
+C:\Users\danny\Documents\PhotomaticAA build\wpfgfx_cor3.dll
+C:\Users\danny\Documents\PhotomaticAA build\PhotoMaticAa.exe
