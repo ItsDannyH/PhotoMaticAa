@@ -176,10 +176,16 @@ namespace PhotoMaticAa
                 {
                     progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
 
-                    if (fullscreenForm != null && !fullscreenForm.IsDisposed)
+                    try
                     {
-                        fullscreenForm.UpdateVolumeBar(volumeLevel);
+                        if (fullscreenForm != null && !fullscreenForm.IsDisposed)
+                            fullscreenForm.UpdateVolumeBar(volumeLevel);
                     }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Fout bij UpdateVolumeBar: " + ex.Message);
+                    }
+
                 });
 
                 if (volumeLevel > numMicThreshold.Value && !isTriggered)
@@ -522,6 +528,8 @@ namespace PhotoMaticAa
                 }
 
                 fullscreenForm = new FullscreenPreviewForm(pictureBox1.Image);
+                fullscreenForm.SetThreshold((int)numMicThreshold.Value);
+
                 fullscreenForm.FormClosed += FullscreenForm_FormClosed;
                 fullscreenForm.Show();
             }
