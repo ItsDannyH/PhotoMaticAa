@@ -281,7 +281,7 @@ namespace PhotoMaticAa
 
             using (Graphics g = Graphics.FromImage(new Bitmap(1, 1)))
             {
-                SizeF size = g.MeasureString(customText, font);
+                SizeF size = g.MeasureString(customText, font, width); // Max width voor wrapping
                 textHeight = (int)Math.Ceiling(size.Height);
             }
 
@@ -297,7 +297,15 @@ namespace PhotoMaticAa
                     g.DrawImage(photos[i], 0, i * (height + margin));
                 }
 
-                g.DrawString(customText, font, Brushes.Black, new PointF(0, strip.Height - textHeight));
+                RectangleF textRect = new RectangleF(0, strip.Height - textHeight, strip.Width, textHeight);
+                StringFormat format = new StringFormat
+                {
+                    Alignment = StringAlignment.Near,
+                    LineAlignment = StringAlignment.Near,
+                    Trimming = StringTrimming.Word
+                };
+
+                g.DrawString(customText, font, Brushes.Black, textRect, format);
             }
 
             return strip;
