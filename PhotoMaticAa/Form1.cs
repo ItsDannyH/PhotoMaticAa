@@ -13,40 +13,46 @@ using PdfSharp.Pdf;
 using PdfSharp.Drawing;
 using System.Drawing;
 
-
 namespace PhotoMaticAa
 {
     public partial class Form1 : Form
     {
+        // Webcam gerelateerd
         private FilterInfoCollection? videoDevices;
         private VideoCaptureDevice? videoSource;
 
+        // Fotologica
         private int currentPhotoIndex = 0;
         private int totalPhotosToTake = 3;
-        private bool isTakingPictures = false; // flag om meerdere triggers van takepicture te voorkomen
+        private bool isTakingPictures = false;
 
-
+        // Microfoon
         private WaveInEvent waveIn;
         private bool isTriggered = false;
         private int triggerThreshold => (int)numMicThreshold.Value;
         private int cooldownTime = 5000;
 
+        // Foto-opslag
         private List<Bitmap> capturedPhotos = new();
         private int photoCount = 0;
         private System.Windows.Forms.Timer? photoTimer;
 
+        // Arduino
         private SerialPort serialPort;
 
+        // Fullscreen gedrag
         private System.Drawing.Point pictureBox1OriginalLocation;
         private System.Drawing.Size pictureBox1OriginalSize;
-
         private bool isFullscreen = false;
         private bool isTogglingFullscreen = false;
 
+        // Achtergrondafbeelding
         private Bitmap backgroundImage;
 
+        // Lettertype voor ondertekst
         private Font selectedFont = new Font("Arial", 12);
 
+        // Panels voor volume-indicatie
         private Panel pnlVolumeTrackBackground;
         private Panel pnlVolumeTrackLevel;
         private Panel pnlVolumeThresholdLine;
@@ -59,25 +65,28 @@ namespace PhotoMaticAa
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Afsluitgedrag en click event instellen
             this.FormClosing += Form1_FormClosing;
             pictureBox1.Click += pictureBox1_Click;
 
+            // Trigger methode wisselen (mic/klik)
             radioBtnMic.CheckedChanged += RadioButtons_CheckedChanged;
             radioBtnClick.CheckedChanged += RadioButtons_CheckedChanged;
-
-            // Stel standaard trigger in
             radioBtnClick.Checked = true;
+            UpdateTriggerMode();
 
-            UpdateTriggerMode(); // zet juiste trigger op basis van radio buttons
-
+            // Drempelwijziging
             numMicThreshold.ValueChanged += numMicThreshold_ValueChanged;
 
+            // Start camera en microfoon
             StartCamera();
             StartMicrophone();
 
+            // Onthoud originele grootte en positie van PictureBox
             pictureBox1OriginalLocation = pictureBox1.Location;
             pictureBox1OriginalSize = pictureBox1.Size;
 
+            // Arduino verbinden via COM
             try
             {
                 serialPort = new SerialPort("COM3", 9600);
@@ -89,33 +98,26 @@ namespace PhotoMaticAa
                 MessageBox.Show("Fout bij verbinden met Arduino (COM-poort): " + ex.Message);
             }
 
-
+            // Eventhandlers voor intervalinstellingen
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
         }
+
+        // Speelt camerasluiter-geluid af
         private void PlayClickSound()
         {
             string path = Path.Combine(Application.StartupPath, "Sounds", "camera.wav");
-
-            // Controleer of het bestand bestaat
-            if (File.Exists(path))
-            {
-                SoundPlayer player = new SoundPlayer(path);
-                player.Play();
-            }
-            else
-            {
-                MessageBox.Show("Het geluid bestand is niet gevonden.");
-            }
+            if (File.Exists(path)) new SoundPlayer(path).Play();
+            else MessageBox.Show("Het geluid bestand is niet gevonden.");
         }
 
+        // Start webcam
         private void StartCamera()
         {
             videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-
             if (videoDevices.Count == 0)
             {
-                MessageBox.Show("Geen camera gevonden. Controleer of je webcam is aangesloten.");
+                MessageBox.Show("Geen camera gevonden.");
                 return;
             }
 
@@ -127,44 +129,43 @@ namespace PhotoMaticAa
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Fout bij het starten van de camera: " + ex.Message);
+                MessageBox.Show("Fout bij camera: " + ex.Message);
             }
         }
 
+        // Start microfooninput (volume meten)
         private void StartMicrophone(int deviceIndex = 0)
         {
-            if (radioBtnMic.Checked)
-            {
-                try
-                {
-                    waveIn?.StopRecording();
-                    waveIn?.Dispose();
+            if (!radioBtnMic.Checked) return;
 
-                    waveIn = new WaveInEvent
-                    {
-                        DeviceNumber = deviceIndex,
-                        WaveFormat = new WaveFormat(44100, 1)
-                    };
-                    waveIn.DataAvailable += WaveIn_DataAvailable;
-                    waveIn.StartRecording();
-                }
-                catch (Exception ex)
+            try
+            {
+                waveIn?.StopRecording();
+                waveIn?.Dispose();
+
+                waveIn = new WaveInEvent
                 {
-                    MessageBox.Show("Microfoon kon niet worden gestart: " + ex.Message);
-                }
+                    DeviceNumber = deviceIndex,
+                    WaveFormat = new WaveFormat(44100, 1)
+                };
+                waveIn.DataAvailable += WaveIn_DataAvailable;
+                waveIn.StartRecording();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Microfoon kon niet starten: " + ex.Message);
             }
         }
+
+        // Stop microfoon
         private void StopMicrophone()
         {
-            if (waveIn != null)
-            {
-                waveIn.DataAvailable -= WaveIn_DataAvailable;
-                waveIn.StopRecording();
-                waveIn.Dispose();
-                waveIn = null;
-            }
+            waveIn?.StopRecording();
+            waveIn?.Dispose();
+            waveIn = null;
         }
 
+        // Mic-volume live uitlezen
         private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
             try
@@ -172,35 +173,36 @@ namespace PhotoMaticAa
                 int maxVolume = 0;
                 for (int i = 0; i < e.BytesRecorded; i += 2)
                 {
-                    if (i + 1 >= e.BytesRecorded) break; // voorkom index out of range
-
+                    if (i + 1 >= e.BytesRecorded) break;
                     short sample = BitConverter.ToInt16(e.Buffer, i);
-
                     maxVolume = Math.Max(maxVolume, Math.Abs(sample));
                 }
 
                 int volumeLevel = (int)((float)maxVolume / short.MaxValue * 100);
+
+                // Update progressbar op UI thread
+                this.BeginInvoke(() =>
+                {
+                    progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
+                });
+
+                // Volume UI in fullscreen updaten
                 if (isFullscreen && pnlVolumeTrackLevel != null && pnlVolumeTrackBackground != null)
                 {
                     this.BeginInvoke(() =>
                     {
                         int maxHeight = pnlVolumeTrackBackground.Height;
                         int barHeight = (int)(maxHeight * (volumeLevel / 100.0));
-                        if (barHeight < 1) barHeight = 1;
-
-                        pnlVolumeTrackLevel.Height = barHeight;
-                        pnlVolumeTrackLevel.Top = pnlVolumeTrackBackground.Height - barHeight;
+                        pnlVolumeTrackLevel.Height = Math.Max(barHeight, 1);
+                        pnlVolumeTrackLevel.Top = maxHeight - pnlVolumeTrackLevel.Height;
                     });
                 }
 
-                if (volumeLevel > numMicThreshold.Value && !isTriggered)
+                // Trigger als volume boven drempel is
+                if (volumeLevel > triggerThreshold && !isTriggered)
                 {
                     isTriggered = true;
-
-                    this.BeginInvoke(() =>
-                    {
-                        TakePicture();
-                    });
+                    this.BeginInvoke(() => TakePicture());
 
                     Task.Run(async () =>
                     {
@@ -211,18 +213,18 @@ namespace PhotoMaticAa
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Fout in mic detectie: " + ex.Message);
+                Console.WriteLine("Mic detectie fout: " + ex.Message);
             }
         }
 
+        // Camera levert nieuw beeld: zet in PictureBox
         private void Video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
-            // Kopieer het beeld en toon het in de PictureBox
             Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone();
             pictureBox1.Image = bitmap;
         }
 
-
+        // Proper afsluiten van camera
         private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
         {
             if (videoSource != null && videoSource.IsRunning)
@@ -233,14 +235,16 @@ namespace PhotoMaticAa
                 videoSource = null;
             }
 
-            Application.Exit(); // ensures full exit
+            Application.Exit();
         }
 
+        // Handmatige fotoknop
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
             TakePicture();
         }
 
+        // Start fotoreeks
         private async void TakePicture()
         {
             if (isTakingPictures) return;
@@ -258,28 +262,30 @@ namespace PhotoMaticAa
             currentPhotoIndex = 0;
             totalPhotosToTake = 3;
 
-            SendCountdownToArduino();
+            SendCountdownToArduino(); // led + foto-timer starten
         }
+
+        // Neemt huidige frame als foto
         private void CapturePhoto()
         {
             if (videoSource == null || pictureBox1.Image == null) return;
-
             Bitmap photo = new Bitmap(pictureBox1.Image);
             capturedPhotos.Add(photo);
             PlayClickSound();
         }
 
+        // Start countdown via Arduino
         private void SendCountdownToArduino()
         {
             if (serialPort?.IsOpen == true && currentPhotoIndex < totalPhotosToTake)
             {
-                // interval in ms naar Arduino sturen (led interval)
                 int ledIntervalMs = (int)(numIntervalLed.Value * 1000);
                 string cmd = $"COUNTDOWN;{ledIntervalMs}\n";
                 serialPort.Write(cmd);
             }
         }
 
+        // Maakt strip (3 foto's onder elkaar + tekst)
         private Bitmap CreateStrip(List<Bitmap> photos)
         {
             int width = photos[0].Width;
@@ -288,11 +294,11 @@ namespace PhotoMaticAa
 
             string customText = txtOndertekst.Text;
             Font font = selectedFont;
-            int textHeight;
 
+            int textHeight;
             using (Graphics g = Graphics.FromImage(new Bitmap(1, 1)))
             {
-                SizeF size = g.MeasureString(customText, font, width); // Max width voor wrapping
+                SizeF size = g.MeasureString(customText, font, width);
                 textHeight = (int)Math.Ceiling(size.Height);
             }
 
@@ -301,7 +307,7 @@ namespace PhotoMaticAa
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.Clear(Color.Transparent); // Geen wit!
+                g.Clear(Color.Transparent);
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -322,13 +328,12 @@ namespace PhotoMaticAa
             return strip;
         }
 
-
+        // Combineert 2 strips op een A4-pagina
         private Bitmap CombineTwoStripsIntoPage(List<Bitmap> photos)
         {
             Bitmap strip1 = CreateStrip(photos);
             Bitmap strip2 = CreateStrip(photos);
 
-            // A4 formaat in pixels bij 96 DPI
             int pageWidth = 794;
             int pageHeight = 1123;
 
@@ -337,7 +342,6 @@ namespace PhotoMaticAa
             {
                 g.Clear(Color.White);
 
-                // Achtergrond tekenen (proportioneel centreren en schalen)
                 if (backgroundImage != null)
                 {
                     float bgRatio = Math.Min((float)pageWidth / backgroundImage.Width, (float)pageHeight / backgroundImage.Height);
@@ -345,13 +349,11 @@ namespace PhotoMaticAa
                     int bgHeight = (int)(backgroundImage.Height * bgRatio);
                     int bgX = (pageWidth - bgWidth) / 2;
                     int bgY = (pageHeight - bgHeight) / 2;
-
                     g.DrawImage(backgroundImage, bgX, bgY, bgWidth, bgHeight);
                 }
 
-                // Strips schalen naar 80% van de hoogte
                 float maxStripHeight = pageHeight * 0.8f;
-                float scaleFactor = Math.Min(maxStripHeight / strip1.Height, (pageWidth * 0.45f) / strip1.Width); // max 45% breedte per strip
+                float scaleFactor = Math.Min(maxStripHeight / strip1.Height, (pageWidth * 0.45f) / strip1.Width);
                 int newStripWidth = (int)(strip1.Width * scaleFactor);
                 int newStripHeight = (int)(strip1.Height * scaleFactor);
 
@@ -367,9 +369,9 @@ namespace PhotoMaticAa
             return page;
         }
 
+        // Middelt en schaalt een afbeelding netjes in het opgegeven kader
         private void DrawCenteredImage(Graphics g, Image image, Rectangle bounds)
         {
-
             double ratioX = (double)bounds.Width / image.Width;
             double ratioY = (double)bounds.Height / image.Height;
             double ratio = Math.Min(ratioX, ratioY);
@@ -380,33 +382,24 @@ namespace PhotoMaticAa
             int posX = bounds.X + (bounds.Width - newWidth) / 2;
             int posY = bounds.Y + (bounds.Height - newHeight) / 2;
 
-
-
-
             g.DrawImage(image, posX, posY, newWidth, newHeight);
         }
 
-
+        // Sla bitmap op als PDF in backupmap
         private void SaveBitmapAsPdfBackup(Bitmap bitmap, string fileName)
         {
             string folderPath = Path.Combine(Application.StartupPath, "strippenbackup");
             if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
 
             string filePath = Path.Combine(folderPath, fileName);
-
             using var document = new PdfDocument();
             var page = document.AddPage();
-
-            // Stel paginaformaat in (A4 bijv.)
             page.Size = PdfSharp.PageSize.A4;
-            page.Orientation = PdfSharp.PageOrientation.Portrait;
 
             using var gfx = XGraphics.FromPdfPage(page);
-
             using var ms = new MemoryStream();
             bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
             ms.Position = 0;
-
             using var xImage = XImage.FromStream(ms);
 
             double ratioX = page.Width.Point / bitmap.Width;
@@ -415,7 +408,6 @@ namespace PhotoMaticAa
 
             double width = bitmap.Width * ratio;
             double height = bitmap.Height * ratio;
-
             double x = (page.Width.Point - width) / 2;
             double y = (page.Height.Point - height) / 2;
 
@@ -423,24 +415,22 @@ namespace PhotoMaticAa
             document.Save(filePath);
         }
 
+        // Maak finale pagina, toon preview, sla op en print
         private void CombinePhotosIntoStripsAndSave()
         {
             if (capturedPhotos.Count < 3) return;
 
             Bitmap pageBitmap = CombineTwoStripsIntoPage(capturedPhotos);
-
-            // Toon in PictureBox
             pictureBox1.Image = pageBitmap;
 
-            // Opslaan als PDF (backup)
             string fileName = $"FotoStrippenBackup_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
             SaveBitmapAsPdfBackup(pageBitmap, fileName);
 
-            // Printen
             PrintImage(pageBitmap);
-
             btnTakePictures.Enabled = true;
         }
+
+        // Start printproces
         private void PrintImage(Image imageToPrint)
         {
             PrintDocument printDoc = new();
@@ -461,23 +451,19 @@ namespace PhotoMaticAa
             }
         }
 
-
+        // Ontvangt triggers van Arduino
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             string data = serialPort.ReadLine().Trim();
-            Console.WriteLine("Ontvangen via COM: " + data); // debug
 
             if (data == "BUTTON")
             {
                 this.BeginInvoke(() =>
                 {
-                    if (radioBtnClick.Checked) // alleen als klik-modus aanstaat
-                    {
-                        TakePicture(); // zelfde functie als digitale knop
-                    }
+                    if (radioBtnClick.Checked)
+                        TakePicture();
                 });
             }
-
 
             if (data == "READY")
             {
@@ -488,7 +474,6 @@ namespace PhotoMaticAa
 
                     if (currentPhotoIndex < totalPhotosToTake)
                     {
-                        int intervalLed = (int)(numIntervalLed.Value * 1000);
                         int intervalPic = (int)(numIntervalPic.Value * 1000);
                         await Task.Delay(intervalPic);
                         SendCountdownToArduino();
@@ -502,44 +487,32 @@ namespace PhotoMaticAa
             }
         }
 
-
-        private void Interval_ValueChanged(object sender, EventArgs e)
-        {
-            UpdateTotalIntervalLabel();
-        }
+        // UI updaten bij intervalwijzigingen
+        private void Interval_ValueChanged(object sender, EventArgs e) => UpdateTotalIntervalLabel();
         private void UpdateTotalIntervalLabel()
         {
-            decimal ledInterval = numIntervalLed.Value;
-            decimal pictureInterval = numIntervalPic.Value;
-
-            // 3 keer led interval + picture interval (sec)
-            decimal totalInterval = ledInterval * 3 + pictureInterval;
-
+            decimal totalInterval = numIntervalLed.Value * 3 + numIntervalPic.Value;
             lblTotalInt.Text = $"{totalInterval:F1} Sec";
         }
+
+        // Klik op camera-preview voor fullscreen modus
         private async void pictureBox1_Click(object sender, EventArgs e)
         {
-            if (isTogglingFullscreen)
-                return;
+            if (isTogglingFullscreen) return;
 
             isTogglingFullscreen = true;
 
-            if (!isFullscreen)
-            {
-                EnterFullscreen();
-            }
-            else
-            {
-                ExitFullscreen();
-            }
+            if (!isFullscreen) EnterFullscreen();
+            else ExitFullscreen();
 
             await Task.Delay(300);
             isTogglingFullscreen = false;
         }
+
+        // Zet fullscreen aan
         private void EnterFullscreen()
         {
             isFullscreen = true;
-
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
 
@@ -552,7 +525,6 @@ namespace PhotoMaticAa
             int barTop = (this.ClientSize.Height - barHeight) / 2;
             int barLeft = this.ClientSize.Width - barWidth - margin;
 
-            // Achtergrond
             pnlVolumeTrackBackground = new Panel
             {
                 Width = barWidth,
@@ -564,19 +536,17 @@ namespace PhotoMaticAa
             this.Controls.Add(pnlVolumeTrackBackground);
             pnlVolumeTrackBackground.BringToFront();
 
-            // Groene volume-balk
             pnlVolumeTrackLevel = new Panel
             {
                 Width = barWidth,
                 Height = 0,
                 Left = 0,
-                Top = pnlVolumeTrackBackground.Height,
+                Top = barHeight,
                 BackColor = Color.LimeGreen,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
             pnlVolumeTrackBackground.Controls.Add(pnlVolumeTrackLevel);
 
-            // Threshold-lijn
             pnlVolumeThresholdLine = new Panel
             {
                 Width = barWidth,
@@ -586,14 +556,12 @@ namespace PhotoMaticAa
                 Top = GetThresholdTopPosition()
             };
             pnlVolumeTrackBackground.Controls.Add(pnlVolumeThresholdLine);
-
-            pnlVolumeTrackBackground.Visible = true;
         }
 
+        // Zet fullscreen uit
         private void ExitFullscreen()
         {
             isFullscreen = false;
-
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.WindowState = FormWindowState.Normal;
 
@@ -610,34 +578,30 @@ namespace PhotoMaticAa
             }
         }
 
-        private void RadioButtons_CheckedChanged(object sender, EventArgs e)
-        {
-            UpdateTriggerMode();
-        }
-
+        // Wisselen tussen mic/klik-modus
+        private void RadioButtons_CheckedChanged(object sender, EventArgs e) => UpdateTriggerMode();
         private void UpdateTriggerMode()
         {
             if (radioBtnMic.Checked)
             {
-                StartMicrophone();        // microfoon aanzetten
-                btnTakePictures.Enabled = false;  // handmatige knop uitzetten
+                StartMicrophone();
+                btnTakePictures.Enabled = false;
             }
             else
             {
-                StopMicrophone();         // microfoon stoppen
-                btnTakePictures.Enabled = true;   // handmatige knop aanzetten
+                StopMicrophone();
+                btnTakePictures.Enabled = true;
             }
         }
 
+        // Verplaats thresholdlijn als waarde wijzigt
         private void numMicThreshold_ValueChanged(object sender, EventArgs e)
         {
-            if (isFullscreen && pnlVolumeThresholdLine != null && pnlVolumeTrackBackground != null)
-            {
+            if (isFullscreen && pnlVolumeThresholdLine != null)
                 pnlVolumeThresholdLine.Top = GetThresholdTopPosition();
-            }
-
         }
 
+        // Selecteer achtergrond
         private void btnSelectBackground_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -650,10 +614,10 @@ namespace PhotoMaticAa
             }
         }
 
+        // Kies font
         private void btnSelectFont_Click(object sender, EventArgs e)
         {
             fontDialog1.Font = selectedFont;
-
             if (fontDialog1.ShowDialog() == DialogResult.OK)
             {
                 selectedFont = fontDialog1.Font;
@@ -661,12 +625,12 @@ namespace PhotoMaticAa
             }
         }
 
+        // Bereken Y-positie van threshold lijn
         private int GetThresholdTopPosition()
         {
             int maxHeight = pnlVolumeTrackBackground.Height;
             double ratio = (double)numMicThreshold.Value / 100.0;
-            int lineY = (int)(maxHeight * (1 - ratio));
-            return lineY;
+            return (int)(maxHeight * (1 - ratio));
         }
     }
 }
