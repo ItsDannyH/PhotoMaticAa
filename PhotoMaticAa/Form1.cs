@@ -112,7 +112,7 @@ namespace PhotoMaticAa
 
             try
             {
-                videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
+                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
                 videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
                 videoSource.Start();
             }
@@ -172,10 +172,15 @@ namespace PhotoMaticAa
 
                 int volumeLevel = (int)((float)maxVolume / short.MaxValue * 100);
 
-                this.BeginInvoke(new Action(() =>
+                this.BeginInvoke(() =>
                 {
                     progressBarMic.Value = Math.Min(progressBarMic.Maximum, volumeLevel);
-                }));
+
+                    if (fullscreenForm != null && !fullscreenForm.IsDisposed)
+                    {
+                        fullscreenForm.UpdateVolumeBar(volumeLevel);
+                    }
+                });
 
                 if (volumeLevel > numMicThreshold.Value && !isTriggered)
                 {
@@ -269,56 +274,80 @@ namespace PhotoMaticAa
             int width = photos[0].Width;
             int height = photos[0].Height;
             int margin = 10;
-            int textHeight = 40;
-            int extraMargin = 20;
 
+            string customText = txtOndertekst.Text;
+            Font font = selectedFont;
+            int textHeight;
 
-            Bitmap strip = new Bitmap(width + 2 * (margin + extraMargin), height * 3 + margin * 4 + textHeight + 2 * extraMargin);
+            using (Graphics g = Graphics.FromImage(new Bitmap(1, 1)))
+            {
+                SizeF size = g.MeasureString(customText, font);
+                textHeight = (int)Math.Ceiling(size.Height);
+            }
+
+            Bitmap strip = new Bitmap(width, height * 3 + margin * 2 + textHeight);
             using (Graphics g = Graphics.FromImage(strip))
             {
-                g.Clear(Color.White);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.Clear(Color.Transparent); // Geen wit!
 
                 for (int i = 0; i < 3; i++)
                 {
-                    g.DrawImage(photos[i], margin, margin + i * (height + margin));
-                    g.DrawRectangle(Pens.Black, margin, margin + i * (height + margin), width - 1, height - 1);
+                    g.DrawImage(photos[i], 0, i * (height + margin));
                 }
 
-                Font font = selectedFont;
-                string customText = txtOndertekst.Text;
-                g.DrawString(customText, font, Brushes.Black, new PointF(margin, strip.Height - textHeight));
+                g.DrawString(customText, font, Brushes.Black, new PointF(0, strip.Height - textHeight));
             }
+
             return strip;
         }
+
 
         private Bitmap CombineTwoStripsIntoPage(List<Bitmap> photos)
         {
             Bitmap strip1 = CreateStrip(photos);
             Bitmap strip2 = CreateStrip(photos);
 
-            int marginBetween = 20;
-            int pageWidth = strip1.Width * 2 + marginBetween;
-            int pageHeight = strip1.Height;
+            // A4 formaat in pixels bij 96 DPI
+            int pageWidth = 794;
+            int pageHeight = 1123;
 
             Bitmap page = new Bitmap(pageWidth, pageHeight);
             using (Graphics g = Graphics.FromImage(page))
             {
+                g.Clear(Color.White);
+
+                // Achtergrond tekenen (proportioneel centreren en schalen)
                 if (backgroundImage != null)
                 {
-                    g.DrawImage(backgroundImage, 0, 0, pageWidth, pageHeight);
-                }
-                else
-                {
-                    g.Clear(Color.White); // fallback
+                    float bgRatio = Math.Min((float)pageWidth / backgroundImage.Width, (float)pageHeight / backgroundImage.Height);
+                    int bgWidth = (int)(backgroundImage.Width * bgRatio);
+                    int bgHeight = (int)(backgroundImage.Height * bgRatio);
+                    int bgX = (pageWidth - bgWidth) / 2;
+                    int bgY = (pageHeight - bgHeight) / 2;
+
+                    g.DrawImage(backgroundImage, bgX, bgY, bgWidth, bgHeight);
                 }
 
-                g.DrawImage(strip1, 0, 0);
-                g.DrawImage(strip2, strip1.Width + marginBetween + 0, 0);
+                // Strips schalen naar 80% van de hoogte
+                float maxStripHeight = pageHeight * 0.8f;
+                float scaleFactor = Math.Min(maxStripHeight / strip1.Height, (pageWidth * 0.45f) / strip1.Width); // max 45% breedte per strip
+                int newStripWidth = (int)(strip1.Width * scaleFactor);
+                int newStripHeight = (int)(strip1.Height * scaleFactor);
+
+                int marginBetween = 20;
+                int totalWidth = newStripWidth * 2 + marginBetween;
+                int startX = (pageWidth - totalWidth) / 2;
+                int startY = (pageHeight - newStripHeight) / 2;
+
+                g.DrawImage(strip1, startX, startY, newStripWidth, newStripHeight);
+                g.DrawImage(strip2, startX + newStripWidth + marginBetween, startY, newStripWidth, newStripHeight);
             }
-
 
             return page;
         }
+
         private void DrawCenteredImage(Graphics g, Image image, Rectangle bounds)
         {
 
@@ -520,6 +549,11 @@ namespace PhotoMaticAa
         private void numMicThreshold_ValueChanged(object sender, EventArgs e)
         {
             Debug.WriteLine("Microfoon threshold aangepast naar: " + numMicThreshold.Value);
+
+            if (fullscreenForm != null && !fullscreenForm.IsDisposed)
+            {
+                fullscreenForm.SetThreshold((int)numMicThreshold.Value);
+            }
         }
         private void FullscreenForm_FormClosed(object? sender, FormClosedEventArgs e)
         {
