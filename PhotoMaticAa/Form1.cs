@@ -123,7 +123,7 @@ namespace PhotoMaticAa
 
             try
             {
-                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
+                videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
                 videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
                 videoSource.Start();
             }
@@ -456,6 +456,14 @@ namespace PhotoMaticAa
         {
             string data = serialPort.ReadLine().Trim();
 
+            // Log alles naar de Debug console
+            Debug.WriteLine($"[Arduino] {data}");
+
+            // Als je het ook op de UI wilt, maak bijv. een TextBox of ListBox
+            this.BeginInvoke((Delegate)(() => {
+                lstLog.Items.Add($"[{DateTime.Now:T}] {data}");
+            }));
+
             if (data == "BUTTON")
             {
                 this.BeginInvoke(() =>
@@ -482,10 +490,13 @@ namespace PhotoMaticAa
                     {
                         CombinePhotosIntoStripsAndSave();
                         isTakingPictures = false;
+                        if (serialPort?.IsOpen == true)
+                            serialPort.WriteLine("DONE");
                     }
                 }));
             }
         }
+
 
         // UI updaten bij intervalwijzigingen
         private void Interval_ValueChanged(object sender, EventArgs e) => UpdateTotalIntervalLabel();

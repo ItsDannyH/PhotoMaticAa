@@ -52,6 +52,7 @@
             groupBox3 = new GroupBox();
             btnSelectFont = new Button();
             fontDialog1 = new FontDialog();
+            lstLog = new ListBox();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
@@ -297,11 +298,21 @@
             btnSelectFont.UseVisualStyleBackColor = true;
             btnSelectFont.Click += btnSelectFont_Click;
             // 
+            // lstLog
+            // 
+            lstLog.FormattingEnabled = true;
+            lstLog.ItemHeight = 25;
+            lstLog.Location = new Point(30, 716);
+            lstLog.Name = "lstLog";
+            lstLog.Size = new Size(930, 329);
+            lstLog.TabIndex = 12;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1016, 735);
+            ClientSize = new Size(1016, 1074);
+            Controls.Add(lstLog);
             Controls.Add(pictureBox1);
             Controls.Add(groupBox3);
             Controls.Add(label6);
@@ -352,5 +363,6 @@
         private GroupBox groupBox3;
         private Button btnSelectFont;
         private FontDialog fontDialog1;
+        private ListBox lstLog;
     }
 }
