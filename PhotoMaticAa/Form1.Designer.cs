@@ -52,7 +52,9 @@
             groupBox3 = new GroupBox();
             btnSelectFont = new Button();
             fontDialog1 = new FontDialog();
-            lstLog = new ListBox();
+            numKnopCooldown = new NumericUpDown();
+            label9 = new Label();
+            rtbLog = new RichTextBox();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
@@ -60,6 +62,7 @@
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).BeginInit();
             groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).BeginInit();
             SuspendLayout();
             // 
             // pictureBox1
@@ -99,15 +102,15 @@
             numIntervalLed.Name = "numIntervalLed";
             numIntervalLed.Size = new Size(64, 31);
             numIntervalLed.TabIndex = 3;
-            numIntervalLed.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numIntervalLed.Value = new decimal(new int[] { 3, 0, 0, 65536 });
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             // 
             // progressBarMic
             // 
-            progressBarMic.Location = new Point(749, 677);
+            progressBarMic.Location = new Point(20, 147);
             progressBarMic.Name = "progressBarMic";
             progressBarMic.RightToLeft = RightToLeft.Yes;
-            progressBarMic.Size = new Size(205, 21);
+            progressBarMic.Size = new Size(241, 21);
             progressBarMic.Style = ProgressBarStyle.Continuous;
             progressBarMic.TabIndex = 6;
             // 
@@ -175,7 +178,7 @@
             numIntervalPic.Name = "numIntervalPic";
             numIntervalPic.Size = new Size(64, 31);
             numIntervalPic.TabIndex = 6;
-            numIntervalPic.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numIntervalPic.Value = new decimal(new int[] { 3, 0, 0, 65536 });
             // 
             // label2
             // 
@@ -202,9 +205,10 @@
             groupBox2.Controls.Add(numMicThreshold);
             groupBox2.Controls.Add(radioBtnClick);
             groupBox2.Controls.Add(radioBtnMic);
+            groupBox2.Controls.Add(progressBarMic);
             groupBox2.Location = new Point(654, 494);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(300, 150);
+            groupBox2.Size = new Size(300, 198);
             groupBox2.TabIndex = 11;
             groupBox2.TabStop = false;
             groupBox2.Text = "Take Picture";
@@ -298,27 +302,51 @@
             btnSelectFont.UseVisualStyleBackColor = true;
             btnSelectFont.Click += btnSelectFont_Click;
             // 
-            // lstLog
+            // numKnopCooldown
             // 
-            lstLog.FormattingEnabled = true;
-            lstLog.ItemHeight = 25;
-            lstLog.Location = new Point(30, 716);
-            lstLog.Name = "lstLog";
-            lstLog.Size = new Size(930, 329);
-            lstLog.TabIndex = 12;
+            numKnopCooldown.DecimalPlaces = 1;
+            numKnopCooldown.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numKnopCooldown.Location = new Point(577, 655);
+            numKnopCooldown.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
+            numKnopCooldown.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numKnopCooldown.Name = "numKnopCooldown";
+            numKnopCooldown.Size = new Size(53, 31);
+            numKnopCooldown.TabIndex = 11;
+            numKnopCooldown.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(332, 655);
+            label9.Margin = new Padding(0);
+            label9.Name = "label9";
+            label9.Size = new Size(242, 25);
+            label9.TabIndex = 11;
+            label9.Text = "Block Input after picture:  Sec";
+            // 
+            // rtbLog
+            // 
+            rtbLog.Location = new Point(30, 703);
+            rtbLog.Name = "rtbLog";
+            rtbLog.ReadOnly = true;
+            rtbLog.ScrollBars = RichTextBoxScrollBars.Vertical;
+            rtbLog.Size = new Size(930, 359);
+            rtbLog.TabIndex = 13;
+            rtbLog.Text = "";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1016, 1074);
-            Controls.Add(lstLog);
+            ClientSize = new Size(982, 1074);
+            Controls.Add(rtbLog);
+            Controls.Add(numKnopCooldown);
+            Controls.Add(label9);
             Controls.Add(pictureBox1);
             Controls.Add(groupBox3);
             Controls.Add(label6);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
-            Controls.Add(progressBarMic);
             Controls.Add(txtOndertekst);
             Controls.Add(btnTakePictures);
             Name = "Form1";
@@ -333,6 +361,7 @@
             groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).EndInit();
             groupBox3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -363,6 +392,8 @@
         private GroupBox groupBox3;
         private Button btnSelectFont;
         private FontDialog fontDialog1;
-        private ListBox lstLog;
+        private NumericUpDown numKnopCooldown;
+        private Label label9;
+        private RichTextBox rtbLog;
     }
 }

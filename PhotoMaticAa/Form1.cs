@@ -1,17 +1,16 @@
-using System.Drawing.Printing;
-using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using NAudio.Wave;
-using System.Media;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Printing;
+using System.IO.Ports;
+using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO.Ports;
-using System.Diagnostics;
-using PdfSharp.Pdf;
-using PdfSharp.Drawing;
-using System.Drawing;
 
 namespace PhotoMaticAa
 {
@@ -57,7 +56,6 @@ namespace PhotoMaticAa
         private Panel pnlVolumeTrackLevel;
         private Panel pnlVolumeThresholdLine;
 
-
         public Form1()
         {
             InitializeComponent();
@@ -92,15 +90,61 @@ namespace PhotoMaticAa
                 serialPort = new SerialPort("COM3", 9600);
                 serialPort.Open();
                 serialPort.DataReceived += SerialPort_DataReceived;
+                LogSystem("Arduino verbonden via COM3");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Fout bij verbinden met Arduino (COM-poort): " + ex.Message);
+                LogSystem($"Arduino verbinding mislukt: {ex.Message}");
             }
 
             // Eventhandlers voor intervalinstellingen
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
+
+            // Initialiseer cooldown control
+            InitializeKnopCooldown();
+        }
+
+        private void InitializeKnopCooldown()
+        {
+            numKnopCooldown.Minimum = 0;
+            numKnopCooldown.Maximum = 30;
+            numKnopCooldown.Value = 5;
+            numKnopCooldown.DecimalPlaces = 0;
+            numKnopCooldown.Increment = 1;
+            numKnopCooldown.ValueChanged += NumKnopCooldown_ValueChanged;
+        }
+
+        private void LogMessage(string message, Color color)
+        {
+            if (rtbLog.InvokeRequired)
+            {
+                rtbLog.Invoke(new Action(() => LogMessage(message, color)));
+                return;
+            }
+
+            rtbLog.SelectionStart = rtbLog.TextLength;
+            rtbLog.SelectionLength = 0;
+            rtbLog.SelectionColor = color;
+            rtbLog.AppendText($"[{DateTime.Now:T}] {message}\n");
+            rtbLog.SelectionColor = rtbLog.ForeColor;
+            rtbLog.ScrollToCaret();
+        }
+
+        private void LogArduino(string message)
+        {
+            LogMessage($"[Arduino] {message}", Color.Blue);
+        }
+
+        private void LogCSharp(string message)
+        {
+            LogMessage($"[C#] {message}", Color.Red);
+        }
+
+        private void LogSystem(string message)
+        {
+            LogMessage($"[System] {message}", Color.Green);
         }
 
         // Speelt camerasluiter-geluid af
@@ -245,7 +289,7 @@ namespace PhotoMaticAa
         }
 
         // Start fotoreeks
-        private async void TakePicture()
+        private void TakePicture()
         {
             if (isTakingPictures) return;
             isTakingPictures = true;
@@ -257,12 +301,19 @@ namespace PhotoMaticAa
                 return;
             }
 
+            // Blokkeer knop direct bij start fotosessie
+            if (serialPort?.IsOpen == true)
+            {
+                serialPort.WriteLine("BLOCK_BUTTON");
+                LogCSharp("Knop geblokkeerd - fotosessie gestart");
+            }
+
             btnTakePictures.Enabled = false;
             capturedPhotos.Clear();
             currentPhotoIndex = 0;
             totalPhotosToTake = 3;
-
-            SendCountdownToArduino(); // led + foto-timer starten
+            LogCSharp($"Fotosessie gestart - {totalPhotosToTake} foto's");
+            SendCountdownToArduino();
         }
 
         // Neemt huidige frame als foto
@@ -277,14 +328,102 @@ namespace PhotoMaticAa
         // Start countdown via Arduino
         private void SendCountdownToArduino()
         {
-            if (serialPort?.IsOpen == true && currentPhotoIndex < totalPhotosToTake)
+            try
             {
-                int ledIntervalMs = (int)(numIntervalLed.Value * 1000);
-                string cmd = $"COUNTDOWN;{ledIntervalMs}\n";
-                serialPort.Write(cmd);
+                if (serialPort?.IsOpen == true && currentPhotoIndex < totalPhotosToTake)
+                {
+                    int ledIntervalMs = (int)(numIntervalLed.Value * 1000);
+                    string cmd = $"COUNTDOWN;{ledIntervalMs}";
+                    serialPort.WriteLine(cmd);
+                    Debug.WriteLine($"[C#] Sent: {cmd}");
+                    LogCSharp($"Countdown gestart voor foto {currentPhotoIndex + 1}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[C#] Error sending command: {ex.Message}");
+                LogSystem($"FOUT: {ex.Message}");
             }
         }
 
+        // Ontvangt triggers van Arduino
+        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            string data = serialPort.ReadLine().Trim();
+
+            Debug.WriteLine($"[Arduino] {data}");
+
+            // Alle Arduino berichten in blauw
+            this.BeginInvoke(() => LogArduino(data));
+
+            if (data == "BUTTON")
+            {
+                this.BeginInvoke(() =>
+                {
+                    if (radioBtnClick.Checked)
+                        TakePicture();
+                });
+            }
+
+            if (data == "READY")
+            {
+                this.BeginInvoke(new Action(async () =>
+                {
+                    CapturePhoto();
+
+                    if (serialPort?.IsOpen == true)
+                    {
+                        serialPort.WriteLine("SNAP");
+                    }
+
+                    currentPhotoIndex++;
+
+                    if (currentPhotoIndex < totalPhotosToTake)
+                    {
+                        int intervalPic = (int)(numIntervalPic.Value * 1000);
+                        await Task.Delay(intervalPic);
+                        SendCountdownToArduino();
+                    }
+                    else
+                    {
+                        CombinePhotosIntoStripsAndSave();
+                        isTakingPictures = false;
+
+                        if (serialPort?.IsOpen == true)
+                        {
+                            int cooldownMs = (int)(numKnopCooldown.Value * 1000);
+                            serialPort.WriteLine($"DONE;{cooldownMs}");
+
+                            if (cooldownMs > 0)
+                            {
+                                LogCSharp($"Fotosessie voltooid - cooldown: {numKnopCooldown.Value} seconden");
+                            }
+                            else
+                            {
+                                LogCSharp("Fotosessie voltooid - knop direct beschikbaar");
+                            }
+                        }
+                    }
+                }));
+            }
+
+            // Alleen deze handler voor knop vrijgeven
+            if (data == "LOG:BUTTON_ENABLED")
+            {
+                this.BeginInvoke(() =>
+                {
+                    btnTakePictures.Enabled = true;
+                });
+            }
+        }
+
+        private void NumKnopCooldown_ValueChanged(object sender, EventArgs e)
+        {
+            if (this.Visible)
+            {
+                LogCSharp($"Cooldown tijd ingesteld op: {numKnopCooldown.Value} seconden");
+            }
+        }
         // Maakt strip (3 foto's onder elkaar + tekst)
         private Bitmap CreateStrip(List<Bitmap> photos)
         {
@@ -451,55 +590,9 @@ namespace PhotoMaticAa
             }
         }
 
-        // Ontvangt triggers van Arduino
-        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-            string data = serialPort.ReadLine().Trim();
-
-            // Log alles naar de Debug console
-            Debug.WriteLine($"[Arduino] {data}");
-
-            // Als je het ook op de UI wilt, maak bijv. een TextBox of ListBox
-            this.BeginInvoke((Delegate)(() => {
-                lstLog.Items.Add($"[{DateTime.Now:T}] {data}");
-            }));
-
-            if (data == "BUTTON")
-            {
-                this.BeginInvoke(() =>
-                {
-                    if (radioBtnClick.Checked)
-                        TakePicture();
-                });
-            }
-
-            if (data == "READY")
-            {
-                this.BeginInvoke(new Action(async () =>
-                {
-                    CapturePhoto();
-                    currentPhotoIndex++;
-
-                    if (currentPhotoIndex < totalPhotosToTake)
-                    {
-                        int intervalPic = (int)(numIntervalPic.Value * 1000);
-                        await Task.Delay(intervalPic);
-                        SendCountdownToArduino();
-                    }
-                    else
-                    {
-                        CombinePhotosIntoStripsAndSave();
-                        isTakingPictures = false;
-                        if (serialPort?.IsOpen == true)
-                            serialPort.WriteLine("DONE");
-                    }
-                }));
-            }
-        }
-
-
         // UI updaten bij intervalwijzigingen
         private void Interval_ValueChanged(object sender, EventArgs e) => UpdateTotalIntervalLabel();
+
         private void UpdateTotalIntervalLabel()
         {
             decimal totalInterval = numIntervalLed.Value * 3 + numIntervalPic.Value;
@@ -591,6 +684,7 @@ namespace PhotoMaticAa
 
         // Wisselen tussen mic/klik-modus
         private void RadioButtons_CheckedChanged(object sender, EventArgs e) => UpdateTriggerMode();
+
         private void UpdateTriggerMode()
         {
             if (radioBtnMic.Checked)
