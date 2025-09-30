@@ -55,6 +55,8 @@
             numKnopCooldown = new NumericUpDown();
             label9 = new Label();
             rtbLog = new RichTextBox();
+            numFlashTime = new NumericUpDown();
+            label10 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
@@ -63,6 +65,7 @@
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).BeginInit();
             groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numKnopCooldown).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numFlashTime).BeginInit();
             SuspendLayout();
             // 
             // pictureBox1
@@ -287,7 +290,7 @@
             groupBox3.Controls.Add(btnSelectBackground);
             groupBox3.Location = new Point(336, 494);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(300, 150);
+            groupBox3.Size = new Size(300, 113);
             groupBox3.TabIndex = 11;
             groupBox3.TabStop = false;
             groupBox3.Text = "Style";
@@ -306,7 +309,7 @@
             // 
             numKnopCooldown.DecimalPlaces = 1;
             numKnopCooldown.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numKnopCooldown.Location = new Point(577, 655);
+            numKnopCooldown.Location = new Point(581, 610);
             numKnopCooldown.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             numKnopCooldown.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
             numKnopCooldown.Name = "numKnopCooldown";
@@ -317,12 +320,12 @@
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(332, 655);
+            label9.Location = new Point(336, 610);
             label9.Margin = new Padding(0);
             label9.Name = "label9";
-            label9.Size = new Size(242, 25);
+            label9.Size = new Size(247, 25);
             label9.TabIndex = 11;
-            label9.Text = "Block Input after picture:  Sec";
+            label9.Text = "Block Input after picture:   Sec";
             // 
             // rtbLog
             // 
@@ -334,11 +337,34 @@
             rtbLog.TabIndex = 13;
             rtbLog.Text = "";
             // 
+            // numFlashTime
+            // 
+            numFlashTime.Location = new Point(570, 655);
+            numFlashTime.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
+            numFlashTime.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numFlashTime.Name = "numFlashTime";
+            numFlashTime.Size = new Size(66, 31);
+            numFlashTime.TabIndex = 14;
+            numFlashTime.Value = new decimal(new int[] { 150, 0, 0, 0 });
+            numFlashTime.ValueChanged += numFlashTime_ValueChanged;
+            // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(336, 657);
+            label10.Margin = new Padding(0);
+            label10.Name = "label10";
+            label10.Size = new Size(234, 25);
+            label10.TabIndex = 15;
+            label10.Text = "Set time Flash Duration:  Ms";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(982, 1074);
+            Controls.Add(numFlashTime);
+            Controls.Add(label10);
             Controls.Add(rtbLog);
             Controls.Add(numKnopCooldown);
             Controls.Add(label9);
@@ -362,6 +388,7 @@
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).EndInit();
             groupBox3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)numKnopCooldown).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numFlashTime).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -395,5 +422,7 @@
         private NumericUpDown numKnopCooldown;
         private Label label9;
         private RichTextBox rtbLog;
+        private NumericUpDown numFlashTime;
+        private Label label10;
     }
 }

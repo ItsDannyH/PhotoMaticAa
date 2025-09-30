@@ -56,6 +56,12 @@ namespace PhotoMaticAa
         private Panel pnlVolumeTrackLevel;
         private Panel pnlVolumeThresholdLine;
 
+        //panel voor camera flits
+        private Panel flashPanel;
+
+
+        private int flashDuration = 150; // milliseconden
+
         public Form1()
         {
             InitializeComponent();
@@ -102,6 +108,8 @@ namespace PhotoMaticAa
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
 
+            InitializeFlashSettings();
+
             // Initialiseer cooldown control
             InitializeKnopCooldown();
         }
@@ -114,6 +122,14 @@ namespace PhotoMaticAa
             numKnopCooldown.DecimalPlaces = 0;
             numKnopCooldown.Increment = 1;
             numKnopCooldown.ValueChanged += NumKnopCooldown_ValueChanged;
+        }
+        private void InitializeFlashSettings()
+        {
+            numFlashTime.Minimum = 50;
+            numFlashTime.Maximum = 500;
+            numFlashTime.Value = 150;
+            numFlashTime.Increment = 25;
+            numFlashTime.ValueChanged += (s, e) => flashDuration = (int)numFlashTime.Value;
         }
 
         private void LogMessage(string message, Color color)
@@ -317,9 +333,16 @@ namespace PhotoMaticAa
         }
 
         // Neemt huidige frame als foto
-        private void CapturePhoto()
+        private async void CapturePhoto()
         {
             if (videoSource == null || pictureBox1.Image == null) return;
+
+            // Toon flits
+            if (isFullscreen)
+                ShowFlashFullscreen();
+            else
+                LogCSharp($"Niet fullscreen - Geen camera flits gestart");
+
             Bitmap photo = new Bitmap(pictureBox1.Image);
             capturedPhotos.Add(photo);
             PlayClickSound();
@@ -614,7 +637,6 @@ namespace PhotoMaticAa
         }
 
         // Zet fullscreen aan
-        // Zet fullscreen aan
         private void EnterFullscreen()
         {
             isFullscreen = true;
@@ -701,6 +723,27 @@ namespace PhotoMaticAa
             }
         }
 
+        private async void ShowFlashFullscreen()
+        {
+            // Maak flash panel dat het hele scherm vult
+            flashPanel = new Panel
+            {
+                BackColor = Color.White,
+                Location = new Point(0, 0),
+                Size = this.ClientSize,
+                Visible = false
+            };
+            this.Controls.Add(flashPanel);
+            flashPanel.BringToFront();
+            flashPanel.Visible = true;
+            await Task.Delay(flashDuration); // Gebruik instelbare duur
+            flashPanel.Visible = false;
+
+            this.Controls.Remove(flashPanel);
+            flashPanel.Dispose();
+            flashPanel = null;
+        }
+
         // Wisselen tussen mic/klik-modus
         private void RadioButtons_CheckedChanged(object sender, EventArgs e) => UpdateTriggerMode();
 
@@ -755,6 +798,14 @@ namespace PhotoMaticAa
             int maxHeight = pnlVolumeTrackBackground.Height;
             double ratio = (double)numMicThreshold.Value / 100.0;
             return (int)(maxHeight * (1 - ratio));
+        }
+
+        private void numFlashTime_ValueChanged(object sender, EventArgs e)
+        {
+            if (this.Visible)
+            {
+                LogCSharp($"Flash tijd ingesteld op: {numFlashTime.Value} MilliSeconden");
+            }
         }
     }
 }
