@@ -614,11 +614,21 @@ namespace PhotoMaticAa
         }
 
         // Zet fullscreen aan
+        // Zet fullscreen aan
         private void EnterFullscreen()
         {
             isFullscreen = true;
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
+
+            // Verberg alle andere controls behalve pictureBox1
+            foreach (Control control in this.Controls)
+            {
+                if (control != pictureBox1)
+                {
+                    control.Visible = false;
+                }
+            }
 
             pictureBox1.Location = new Point(0, 0);
             pictureBox1.Size = this.ClientSize;
@@ -671,6 +681,15 @@ namespace PhotoMaticAa
 
             pictureBox1.Location = pictureBox1OriginalLocation;
             pictureBox1.Size = pictureBox1OriginalSize;
+
+            // Toon alle controls weer
+            foreach (Control control in this.Controls)
+            {
+                if (control != pnlVolumeTrackBackground) // Behalve de volume panel die we gaan verwijderen
+                {
+                    control.Visible = true;
+                }
+            }
 
             if (pnlVolumeTrackBackground != null)
             {
