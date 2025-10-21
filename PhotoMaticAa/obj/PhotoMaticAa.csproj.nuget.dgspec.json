@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj": {}
+    "C:\\GIIIT\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj": {}
   },
   "projects": {
-    "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj": {
+    "C:\\GIIIT\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
+        "projectUniqueName": "C:\\GIIIT\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
         "projectName": "PhotoMaticAa",
-        "projectPath": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
-        "packagesPath": "C:\\Users\\danny\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\obj\\",
+        "projectPath": "C:\\GIIIT\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
+        "packagesPath": "C:\\Users\\Stan\\.nuget\\packages\\",
+        "outputPath": "C:\\GIIIT\\PhotoMaticAa\\PhotoMaticAa\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\danny\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Stan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -90,7 +90,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
