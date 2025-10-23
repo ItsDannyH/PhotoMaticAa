@@ -40,6 +40,9 @@ namespace PhotoMaticAa
         // Arduino
         private SerialPort serialPort;
 
+        // Database
+        private string Email;
+
         // Fullscreen gedrag
         private System.Drawing.Point pictureBox1OriginalLocation;
         private System.Drawing.Size pictureBox1OriginalSize;

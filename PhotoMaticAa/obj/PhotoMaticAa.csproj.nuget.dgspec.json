@@ -58,6 +58,10 @@
               "target": "Package",
               "version": "[2.2.5, )"
             },
+            "Microsoft.Data.SqlClient": {
+              "target": "Package",
+              "version": "[6.1.2, )"
+            },
             "NAudio": {
               "target": "Package",
               "version": "[2.2.1, )"
