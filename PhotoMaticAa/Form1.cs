@@ -1,4 +1,4 @@
-using System.Drawing.Printing;
+﻿using System.Drawing.Printing;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
@@ -12,6 +12,7 @@ using System.Diagnostics;
 using PdfSharp.Pdf;
 using PdfSharp.Drawing;
 using System.Drawing;
+using Microsoft.Data.SqlClient;
 
 namespace PhotoMaticAa
 {
@@ -42,6 +43,7 @@ namespace PhotoMaticAa
 
         // Database
         private string Email;
+        private string connectionString = "Server=YOUR_SERVER_NAME;Database=PhotoMaticAa;Trusted_Connection=True;";
 
         // Fullscreen gedrag
         private System.Drawing.Point pictureBox1OriginalLocation;
@@ -244,7 +246,14 @@ namespace PhotoMaticAa
         // Handmatige fotoknop
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(txtEmail.Text) || !txtEmail.Text.Contains("@"))
+            {
+                MessageBox.Show("Voer een geldig e-mailadres in.");
+                return;
+            }
+
             TakePicture();
+
         }
 
         // Start fotoreeks
@@ -427,7 +436,26 @@ namespace PhotoMaticAa
             pictureBox1.Image = pageBitmap;
 
             string fileName = $"FotoStrippenBackup_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            string folderPath = Path.Combine(Application.StartupPath, "strippenbackup");
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+            string filePath = Path.Combine(folderPath, fileName);
+
             SaveBitmapAsPdfBackup(pageBitmap, fileName);
+
+            // 🔹 Save to database
+            string email = txtEmail.Text.Trim();
+            if (!string.IsNullOrEmpty(email))
+            {
+                try
+                {
+                    int userId = GetOrCreateUserId(email);
+                    SavePhoto(userId, filePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Fout bij opslaan naar database: " + ex.Message);
+                }
+            }
 
             PrintImage(pageBitmap);
             btnTakePictures.Enabled = true;
@@ -635,5 +663,58 @@ namespace PhotoMaticAa
             double ratio = (double)numMicThreshold.Value / 100.0;
             return (int)(maxHeight * (1 - ratio));
         }
+
+        
+        private int GetOrCreateUserId(string email)
+        {
+            int userId = -1;
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                // Check if user exists
+                string checkUser = "SELECT UserID FROM Users WHERE Email = @Email";
+                using (SqlCommand cmd = new SqlCommand(checkUser, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    object result = cmd.ExecuteScalar();
+                    if (result != null)
+                    {
+                        userId = Convert.ToInt32(result);
+                    }
+                    else
+                    {
+                        // Insert new user
+                        string insertUser = "INSERT INTO Users (Email) OUTPUT INSERTED.UserID VALUES (@Email)";
+                        using (SqlCommand insertCmd = new SqlCommand(insertUser, conn))
+                        {
+                            insertCmd.Parameters.AddWithValue("@Email", email);
+                            userId = (int)insertCmd.ExecuteScalar();
+                        }
+                    }
+                }
+            }
+
+            return userId;
+        }
+
+        private void SavePhoto(int userId, string photoPath)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                string insertPhoto = "INSERT INTO Photos (UserID, PhotoPath) VALUES (@UserID, @PhotoPath)";
+                using (SqlCommand cmd = new SqlCommand(insertPhoto, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserID", userId);
+                    cmd.Parameters.AddWithValue("@PhotoPath", photoPath);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+
     }
 }
