@@ -57,6 +57,7 @@
             rtbLog = new RichTextBox();
             numFlashTime = new NumericUpDown();
             label10 = new Label();
+            txtEmail = new TextBox();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
@@ -304,6 +305,14 @@
             btnSelectFont.Text = "Kies Lettertype";
             btnSelectFont.UseVisualStyleBackColor = true;
             btnSelectFont.Click += btnSelectFont_Click;
+            //
+            // txtEmail
+            //
+            txtEmail.Location = new Point(336, 650);
+            txtEmail.Name = "txtEmail";
+            txtEmail.PlaceholderText = "vul hier uw email adress in";
+            txtEmail.Size = new Size(300, 45);
+            txtEmail.TabIndex = 7;
             // 
             // numKnopCooldown
             // 
@@ -374,6 +383,7 @@
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
             Controls.Add(txtOndertekst);
+            Controls.Add(txtEmail);
             Controls.Add(btnTakePictures);
             Name = "Form1";
             Text = "Form1";
@@ -416,6 +426,7 @@
         private Label label8;
         private Label label7;
         private Button btnSelectBackground;
+        private TextBox txtEmail;
         private GroupBox groupBox3;
         private Button btnSelectFont;
         private FontDialog fontDialog1;

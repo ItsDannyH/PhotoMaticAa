@@ -1,16 +1,20 @@
+using System;
+using System.Drawing.Printing;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Media;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO.Ports;
+using System.Diagnostics;
+using Microsoft.VisualBasic;
+using System.Drawing;
+using Microsoft.Data.SqlClient;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using NAudio.Wave;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using System;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Printing;
-using System.IO.Ports;
-using System.Media;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace PhotoMaticAa
 {
@@ -38,6 +42,10 @@ namespace PhotoMaticAa
 
         // Arduino
         private SerialPort serialPort;
+
+        // Database
+        private string Email;
+        private string connectionString = "Server=YOUR_SERVER_NAME;Database=PhotoMaticAa;Trusted_Connection=True;";
 
         // Fullscreen gedrag
         private System.Drawing.Point pictureBox1OriginalLocation;
@@ -301,6 +309,56 @@ namespace PhotoMaticAa
         // Handmatige fotoknop
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
+            string email = txtEmail.Text.Trim();
+            bool hasValidEmail = !string.IsNullOrWhiteSpace(email) && email.Contains("@");
+
+            if (!hasValidEmail)
+            {
+                var result = MessageBox.Show(
+                    "No valid e-mail found. Do you want to provide an e-mail address now?\n\n" +
+                    "Yes = enter e-mail\nNo = continue without e-mail",
+                    "E-mail?",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    // Allow user a few attempts to enter a valid email; user can cancel by leaving input empty and choosing Cancel/Yes when asked.
+                    for (int attempt = 0; attempt < 3; attempt++)
+                    {
+                        string input = Interaction.InputBox(
+                            "Enter e-mail address (will be saved with the photos):",
+                            "Enter E-mail",
+                            email);
+
+                        if (string.IsNullOrWhiteSpace(input))
+                        {
+                            var cancelChoice = MessageBox.Show(
+                                "No e-mail entered. Do you want to cancel taking pictures?",
+                                "No E-mail",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Question);
+
+                            if (cancelChoice == DialogResult.Yes)
+                                return; // abort
+                                        // else loop again to allow entering email
+                        }
+                        else if (!input.Contains("@"))
+                        {
+                            MessageBox.Show("Please enter a valid e-mail address containing '@'.", "Invalid e-mail", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            // loop for another attempt
+                        }
+                        else
+                        {
+                            txtEmail.Text = input.Trim();
+                            break;
+                        }
+                    }
+                    // if after attempts still no valid email, we continue without email
+                }
+                // If user chose No, continue without email
+            }
+
             TakePicture();
         }
 
@@ -586,7 +644,26 @@ namespace PhotoMaticAa
             pictureBox1.Image = pageBitmap;
 
             string fileName = $"FotoStrippenBackup_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            string folderPath = Path.Combine(Application.StartupPath, "strippenbackup");
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+            string filePath = Path.Combine(folderPath, fileName);
+
             SaveBitmapAsPdfBackup(pageBitmap, fileName);
+
+            // 🔹 Save to database
+            string email = txtEmail.Text.Trim();
+            if (!string.IsNullOrEmpty(email))
+            {
+                try
+                {
+                    int userId = GetOrCreateUserId(email);
+                    SavePhoto(userId, filePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Fout bij opslaan naar database: " + ex.Message);
+                }
+            }
 
             PrintImage(pageBitmap);
             btnTakePictures.Enabled = true;
@@ -807,5 +884,57 @@ namespace PhotoMaticAa
                 LogCSharp($"Flash tijd ingesteld op: {numFlashTime.Value} MilliSeconden");
             }
         }
+        
+        private int GetOrCreateUserId(string email)
+        {
+            int userId = -1;
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                // Check if user exists
+                string checkUser = "SELECT UserID FROM Users WHERE Email = @Email";
+                using (SqlCommand cmd = new SqlCommand(checkUser, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    object result = cmd.ExecuteScalar();
+                    if (result != null)
+                    {
+                        userId = Convert.ToInt32(result);
+                    }
+                    else
+                    {
+                        // Insert new user
+                        string insertUser = "INSERT INTO Users (Email) OUTPUT INSERTED.UserID VALUES (@Email)";
+                        using (SqlCommand insertCmd = new SqlCommand(insertUser, conn))
+                        {
+                            insertCmd.Parameters.AddWithValue("@Email", email);
+                            userId = (int)insertCmd.ExecuteScalar();
+                        }
+                    }
+                }
+            }
+
+            return userId;
+        }
+
+        private void SavePhoto(int userId, string photoPath)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                string insertPhoto = "INSERT INTO Photos (UserID, PhotoPath) VALUES (@UserID, @PhotoPath)";
+                using (SqlCommand cmd = new SqlCommand(insertPhoto, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserID", userId);
+                    cmd.Parameters.AddWithValue("@PhotoPath", photoPath);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+
     }
 }

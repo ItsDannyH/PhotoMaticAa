@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="AForge.Video" Version="2.2.5" />
     <PackageReference Include="AForge.Video.DirectShow" Version="2.2.5" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="PDFsharp" Version="6.2.0" />
     <PackageReference Include="System.IO.Ports" Version="9.0.5" />
