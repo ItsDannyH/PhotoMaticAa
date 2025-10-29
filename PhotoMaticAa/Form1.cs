@@ -45,7 +45,7 @@ namespace PhotoMaticAa
 
         // Database
         private string Email;
-        private string connectionString = "Server=YOUR_SERVER_NAME;Database=PhotoMaticAa;Trusted_Connection=True;";
+        private string connectionString = "Data Source=localhost\\sqlexpress;Initial Catalog=PhotoMaticAa;Integrated Security=True;Encrypt=True;Trust Server Certificate=True";
 
         // Fullscreen gedrag
         private System.Drawing.Point pictureBox1OriginalLocation;
@@ -101,7 +101,7 @@ namespace PhotoMaticAa
             // Arduino verbinden via COM
             try
             {
-                serialPort = new SerialPort("COM3", 9600);
+                serialPort = new SerialPort("COM4", 9600);
                 serialPort.Open();
                 serialPort.DataReceived += SerialPort_DataReceived;
                 LogSystem("Arduino verbonden via COM3");
@@ -191,7 +191,7 @@ namespace PhotoMaticAa
 
             try
             {
-                videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
+                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
                 videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
                 videoSource.Start();
             }
