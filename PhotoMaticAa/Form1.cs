@@ -11,6 +11,7 @@ using System.IO.Ports;
 using System.Diagnostics;
 using PdfSharp.Pdf;
 using PdfSharp.Drawing;
+using Microsoft.VisualBasic;
 using System.Drawing;
 using Microsoft.Data.SqlClient;
 
@@ -246,14 +247,57 @@ namespace PhotoMaticAa
         // Handmatige fotoknop
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtEmail.Text) || !txtEmail.Text.Contains("@"))
+            string email = txtEmail.Text.Trim();
+            bool hasValidEmail = !string.IsNullOrWhiteSpace(email) && email.Contains("@");
+
+            if (!hasValidEmail)
             {
-                MessageBox.Show("Voer een geldig e-mailadres in.");
-                return;
+                var result = MessageBox.Show(
+                    "No valid e-mail found. Do you want to provide an e-mail address now?\n\n" +
+                    "Yes = enter e-mail\nNo = continue without e-mail",
+                    "E-mail?",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    // Allow user a few attempts to enter a valid email; user can cancel by leaving input empty and choosing Cancel/Yes when asked.
+                    for (int attempt = 0; attempt < 3; attempt++)
+                    {
+                        string input = Interaction.InputBox(
+                            "Enter e-mail address (will be saved with the photos):",
+                            "Enter E-mail",
+                            email);
+
+                        if (string.IsNullOrWhiteSpace(input))
+                        {
+                            var cancelChoice = MessageBox.Show(
+                                "No e-mail entered. Do you want to cancel taking pictures?",
+                                "No E-mail",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Question);
+
+                            if (cancelChoice == DialogResult.Yes)
+                                return; // abort
+                                        // else loop again to allow entering email
+                        }
+                        else if (!input.Contains("@"))
+                        {
+                            MessageBox.Show("Please enter a valid e-mail address containing '@'.", "Invalid e-mail", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            // loop for another attempt
+                        }
+                        else
+                        {
+                            txtEmail.Text = input.Trim();
+                            break;
+                        }
+                    }
+                    // if after attempts still no valid email, we continue without email
+                }
+                // If user chose No, continue without email
             }
 
             TakePicture();
-
         }
 
         // Start fotoreeks

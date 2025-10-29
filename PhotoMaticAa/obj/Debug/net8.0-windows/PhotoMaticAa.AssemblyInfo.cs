@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PhotoMaticAa")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4134d3c62cf6092f1c2b1e04ebcba39c0f6bc91a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2a9a03326787e70b46b9c78f3f32dbf894c9e1a")]
 [assembly: System.Reflection.AssemblyProductAttribute("PhotoMaticAa")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PhotoMaticAa")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
