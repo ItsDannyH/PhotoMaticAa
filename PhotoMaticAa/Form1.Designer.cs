@@ -81,7 +81,7 @@
             // 
             // btnTakePictures
             // 
-            btnTakePictures.Location = new Point(30, 650);
+            btnTakePictures.Location = new Point(342, 613);
             btnTakePictures.Name = "btnTakePictures";
             btnTakePictures.Size = new Size(292, 34);
             btnTakePictures.TabIndex = 1;
@@ -120,9 +120,14 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(numFlashTime);
             groupBox1.Controls.Add(lblTotalInt);
+            groupBox1.Controls.Add(label10);
             groupBox1.Controls.Add(label5);
+            groupBox1.Controls.Add(numKnopCooldown);
             groupBox1.Controls.Add(label3);
+            groupBox1.Controls.Add(label9);
+            groupBox1.Controls.Add(txtEmail);
             groupBox1.Controls.Add(label4);
             groupBox1.Controls.Add(numIntervalPic);
             groupBox1.Controls.Add(label2);
@@ -130,7 +135,7 @@
             groupBox1.Controls.Add(numIntervalLed);
             groupBox1.Location = new Point(30, 494);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(300, 150);
+            groupBox1.Size = new Size(300, 249);
             groupBox1.TabIndex = 7;
             groupBox1.TabStop = false;
             groupBox1.Text = "Interval";
@@ -305,20 +310,12 @@
             btnSelectFont.Text = "Kies Lettertype";
             btnSelectFont.UseVisualStyleBackColor = true;
             btnSelectFont.Click += btnSelectFont_Click;
-            //
-            // txtEmail
-            //
-            txtEmail.Location = new Point(336, 650);
-            txtEmail.Name = "txtEmail";
-            txtEmail.PlaceholderText = "vul hier uw email adress in";
-            txtEmail.Size = new Size(300, 45);
-            txtEmail.TabIndex = 7;
             // 
             // numKnopCooldown
             // 
             numKnopCooldown.DecimalPlaces = 1;
             numKnopCooldown.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numKnopCooldown.Location = new Point(581, 610);
+            numKnopCooldown.Location = new Point(240, 138);
             numKnopCooldown.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             numKnopCooldown.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
             numKnopCooldown.Name = "numKnopCooldown";
@@ -329,16 +326,16 @@
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(336, 610);
+            label9.Location = new Point(6, 140);
             label9.Margin = new Padding(0);
             label9.Name = "label9";
-            label9.Size = new Size(247, 25);
+            label9.Size = new Size(237, 25);
             label9.TabIndex = 11;
-            label9.Text = "Block Input after picture:   Sec";
+            label9.Text = "Block Input after picture: Sec";
             // 
             // rtbLog
             // 
-            rtbLog.Location = new Point(30, 703);
+            rtbLog.Location = new Point(30, 749);
             rtbLog.Name = "rtbLog";
             rtbLog.ReadOnly = true;
             rtbLog.ScrollBars = RichTextBoxScrollBars.Vertical;
@@ -348,7 +345,7 @@
             // 
             // numFlashTime
             // 
-            numFlashTime.Location = new Point(570, 655);
+            numFlashTime.Location = new Point(228, 171);
             numFlashTime.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
             numFlashTime.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numFlashTime.Name = "numFlashTime";
@@ -360,30 +357,33 @@
             // label10
             // 
             label10.AutoSize = true;
-            label10.Location = new Point(336, 657);
+            label10.Location = new Point(6, 173);
             label10.Margin = new Padding(0);
             label10.Name = "label10";
-            label10.Size = new Size(234, 25);
+            label10.Size = new Size(229, 25);
             label10.TabIndex = 15;
-            label10.Text = "Set time Flash Duration:  Ms";
+            label10.Text = "Set time Flash Duration: Ms";
+            // 
+            // txtEmail
+            // 
+            txtEmail.Location = new Point(6, 208);
+            txtEmail.Name = "txtEmail";
+            txtEmail.PlaceholderText = "vul hier uw email adress in";
+            txtEmail.Size = new Size(288, 31);
+            txtEmail.TabIndex = 7;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(982, 1074);
-            Controls.Add(numFlashTime);
-            Controls.Add(label10);
+            ClientSize = new Size(982, 1113);
             Controls.Add(rtbLog);
-            Controls.Add(numKnopCooldown);
-            Controls.Add(label9);
             Controls.Add(pictureBox1);
             Controls.Add(groupBox3);
             Controls.Add(label6);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
             Controls.Add(txtOndertekst);
-            Controls.Add(txtEmail);
             Controls.Add(btnTakePictures);
             Name = "Form1";
             Text = "Form1";

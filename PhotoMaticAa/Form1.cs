@@ -884,56 +884,71 @@ namespace PhotoMaticAa
                 LogCSharp($"Flash tijd ingesteld op: {numFlashTime.Value} MilliSeconden");
             }
         }
-        
+
         private int GetOrCreateUserId(string email)
         {
-            int userId = -1;
+            int userId;
 
+            // Create a new SQL connection
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
 
-                // Check if user exists
+                // Check if a user with this email already exists
                 string checkUser = "SELECT UserID FROM Users WHERE Email = @Email";
                 using (SqlCommand cmd = new SqlCommand(checkUser, conn))
                 {
+                    // Add the email parameter to prevent SQL injection
                     cmd.Parameters.AddWithValue("@Email", email);
+
+                    // Execute the query and get the first column of the first row (UserID)
                     object result = cmd.ExecuteScalar();
+
                     if (result != null)
                     {
+                        // User already exists → retrieve the existing UserID
                         userId = Convert.ToInt32(result);
                     }
                     else
                     {
-                        // Insert new user
+                        // User does not exist → insert a new one and return the new ID
                         string insertUser = "INSERT INTO Users (Email) OUTPUT INSERTED.UserID VALUES (@Email)";
                         using (SqlCommand insertCmd = new SqlCommand(insertUser, conn))
                         {
                             insertCmd.Parameters.AddWithValue("@Email", email);
+
+                            // Execute the insert query and get the newly created UserID
                             userId = (int)insertCmd.ExecuteScalar();
                         }
                     }
                 }
             }
 
+            // Return the found or newly created UserID
             return userId;
         }
 
         private void SavePhoto(int userId, string photoPath)
         {
+            // Create a new SQL connection
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
 
+                // Insert a new photo record and link it to the user
                 string insertPhoto = "INSERT INTO Photos (UserID, PhotoPath) VALUES (@UserID, @PhotoPath)";
                 using (SqlCommand cmd = new SqlCommand(insertPhoto, conn))
                 {
+                    // Add parameters for UserID and the file path of the photo
                     cmd.Parameters.AddWithValue("@UserID", userId);
                     cmd.Parameters.AddWithValue("@PhotoPath", photoPath);
+
+                    // Execute the insert query (no return value expected)
                     cmd.ExecuteNonQuery();
                 }
             }
         }
+
 
 
     }
