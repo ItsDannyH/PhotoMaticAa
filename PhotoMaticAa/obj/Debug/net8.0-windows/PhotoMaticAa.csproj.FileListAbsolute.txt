@@ -212,3 +212,6 @@ C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\r
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\System.CodeDom.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\System.Management.dll
+C:\Users\danny\source\repos\PhotoMaticAa\PhotoMaticAa\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Management.dll

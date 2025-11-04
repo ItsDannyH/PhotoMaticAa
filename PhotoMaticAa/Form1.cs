@@ -1,21 +1,15 @@
-using System;
 using System.Drawing.Printing;
-using System.Windows.Forms;
 using System.Diagnostics;
 using System.Media;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.IO.Ports;
-using System.Diagnostics;
 using Microsoft.VisualBasic;
-using System.Drawing;
 using Microsoft.Data.SqlClient;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using NAudio.Wave;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-
+using System.Management;
 namespace PhotoMaticAa
 {
     public partial class Form1 : Form
@@ -64,6 +58,10 @@ namespace PhotoMaticAa
         private Panel pnlVolumeTrackLevel;
         private Panel pnlVolumeThresholdLine;
 
+        // Printer selection
+        private List<string> installedPrinters = new List<string>();
+        private string? currentPrinterName;
+
         //panel voor camera flits
         private Panel flashPanel;
 
@@ -90,9 +88,16 @@ namespace PhotoMaticAa
             // Drempelwijziging
             numMicThreshold.ValueChanged += numMicThreshold_ValueChanged;
 
-            // Start camera en microfoon
-            StartCamera();
-            StartMicrophone();
+            // Populate device lists and wire selection events
+            PopulateCameraList();
+            PopulateMicrophoneList();
+
+            cmbCamera.SelectedIndexChanged += CmbCamera_SelectedIndexChanged;
+            cmbMicrophone.SelectedIndexChanged += CmbMicrophone_SelectedIndexChanged;
+
+            // Start camera and microphone using selected devices
+            StartCamera(cmbCamera.SelectedIndex >= 0 ? cmbCamera.SelectedIndex : 0);
+            StartMicrophone(cmbMicrophone.SelectedIndex >= 0 ? cmbMicrophone.SelectedIndex : 0);
 
             // Onthoud originele grootte en positie van PictureBox
             pictureBox1OriginalLocation = pictureBox1.Location;
@@ -116,7 +121,14 @@ namespace PhotoMaticAa
             numIntervalLed.ValueChanged += Interval_ValueChanged;
             numIntervalPic.ValueChanged += Interval_ValueChanged;
 
+            // Populate printers and wire selection
+            PopulatePrinterList();
+            cmbPrinterSelect.SelectedIndexChanged += CmbPrinterSelect_SelectedIndexChanged;
+
             InitializeFlashSettings();
+
+            //Reset paper level 
+            btnResetPaper.Click += btnResetPaper_Click;
 
             // Initialiseer cooldown control
             InitializeKnopCooldown();
@@ -179,8 +191,87 @@ namespace PhotoMaticAa
             else MessageBox.Show("Het geluid bestand is niet gevonden.");
         }
 
-        // Start webcam
-        private void StartCamera()
+        // Populate available camera devices into combo box
+        private void PopulateCameraList()
+        {
+            try
+            {
+                videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+                cmbCamera.Items.Clear();
+
+                for (int i = 0; i < videoDevices.Count; i++)
+                {
+                    cmbCamera.Items.Add(videoDevices[i].Name);
+                }
+
+                if (cmbCamera.Items.Count > 0)
+                    cmbCamera.SelectedIndex = 0;
+                else
+                {
+                    cmbCamera.Items.Add("No camera");
+                    cmbCamera.SelectedIndex = 0;
+                    cmbCamera.Enabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error populating camera list: " + ex.Message);
+            }
+        }
+
+        // Populate available microphone devices into combo box
+        private void PopulateMicrophoneList()
+        {
+            try
+            {
+                cmbMicrophone.Items.Clear();
+                int deviceCount = NAudio.Wave.WaveIn.DeviceCount;
+                for (int i = 0; i < deviceCount; i++)
+                {
+                    var caps = NAudio.Wave.WaveIn.GetCapabilities(i);
+                    cmbMicrophone.Items.Add(caps.ProductName);
+                }
+
+                if (cmbMicrophone.Items.Count > 0)
+                    cmbMicrophone.SelectedIndex = 0;
+                else
+                {
+                    cmbMicrophone.Items.Add("No microphone");
+                    cmbMicrophone.SelectedIndex = 0;
+                    cmbMicrophone.Enabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error populating microphone list: " + ex.Message);
+            }
+        }
+
+        private void CmbCamera_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            // switch camera while running
+            int idx = cmbCamera.SelectedIndex;
+            if (idx >= 0)
+            {
+                StartCamera(idx);
+            }
+        }
+
+        private void CmbMicrophone_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            int idx = cmbMicrophone.SelectedIndex;
+            if (idx >= 0)
+            {
+                if (radioBtnMic.Checked)
+                {
+                    StopMicrophone();
+                    StartMicrophone(idx);
+                }
+            }
+        }
+
+        // Start webcam (optionally select device index)
+        private void StartCamera(int deviceIndex = 0)
         {
             videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
             if (videoDevices.Count == 0)
@@ -189,15 +280,30 @@ namespace PhotoMaticAa
                 return;
             }
 
+            // Clamp deviceIndex
+            if (deviceIndex < 0) deviceIndex = 0;
+            if (deviceIndex >= videoDevices.Count) deviceIndex = 0;
+
             try
             {
-                videoSource = new VideoCaptureDevice(videoDevices[1].MonikerString);
+                // Stop previous source if running
+                if (videoSource != null && videoSource.IsRunning)
+                {
+                    videoSource.NewFrame -= Video_NewFrame;
+                    videoSource.SignalToStop();
+                    videoSource.WaitForStop();
+                    videoSource = null;
+                }
+
+                videoSource = new VideoCaptureDevice(videoDevices[deviceIndex].MonikerString);
                 videoSource.NewFrame += new NewFrameEventHandler(Video_NewFrame);
                 videoSource.Start();
+                LogSystem($"Camera gestart: {videoDevices[deviceIndex].Name}");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Fout bij camera: " + ex.Message);
+                LogSystem("Fout bij starten camera: " + ex.Message);
             }
         }
 
@@ -288,8 +394,26 @@ namespace PhotoMaticAa
         // Camera levert nieuw beeld: zet in PictureBox
         private void Video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
+            // Clone the incoming frame to own a separate Bitmap instance
             Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone();
-            pictureBox1.Image = bitmap;
+
+            // Ensure UI update and previous-image disposal happen on the UI thread to avoid GDI+ concurrency issues
+            if (pictureBox1.InvokeRequired)
+            {
+                pictureBox1.BeginInvoke(new Action(() =>
+                {
+                    var old = pictureBox1.Image;
+                    pictureBox1.Image = bitmap;
+                    // Dispose previous image to free GDI+ resources (do NOT dispose 'bitmap' we've just assigned)
+                    old?.Dispose();
+                }));
+            }
+            else
+            {
+                var old = pictureBox1.Image;
+                pictureBox1.Image = bitmap;
+                old?.Dispose();
+            }
         }
 
         // Proper afsluiten van camera
@@ -310,7 +434,7 @@ namespace PhotoMaticAa
         private void btnTakePictures_Click(object sender, EventArgs e)
         {
             string email = txtEmail.Text.Trim();
-            bool hasValidEmail = !string.IsNullOrWhiteSpace(email) && email.Contains("@");
+            bool hasValidEmail = !string.IsNullOrWhiteSpace(email) && email.Contains(@"@");
 
             if (!hasValidEmail)
             {
@@ -343,7 +467,7 @@ namespace PhotoMaticAa
                                 return; // abort
                                         // else loop again to allow entering email
                         }
-                        else if (!input.Contains("@"))
+                        else if (!input.Contains(@"@"))
                         {
                             MessageBox.Show("Please enter a valid e-mail address containing '@'.", "Invalid e-mail", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             // loop for another attempt
@@ -365,12 +489,35 @@ namespace PhotoMaticAa
         // Start fotoreeks
         private void TakePicture()
         {
+            // Prevent starting a photo session if paper is empty
+            if (numPaperLeft.Value <= 0)
+            {
+                LogSystem("Cannot start fotosessie: paper empty. Button blocked.");
+                btnTakePictures.Enabled = false;
+
+                try
+                {
+                    if (serialPort?.IsOpen == true)
+                    {
+                        serialPort.WriteLine("DONE;9999999"); // effectively lock the Arduino button
+                        LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogSystem("Error sending lock command to Arduino: " + ex.Message);
+                }
+
+                isTakingPictures = false;
+                return;
+            }
+
             if (isTakingPictures) return;
             isTakingPictures = true;
 
             if (videoSource == null || !videoSource.IsRunning)
             {
-                MessageBox.Show("Camera is niet actief.");
+                MessageBox.Show("Camera is niet active.");
                 isTakingPictures = false;
                 return;
             }
@@ -442,7 +589,30 @@ namespace PhotoMaticAa
                 this.BeginInvoke(() =>
                 {
                     if (radioBtnClick.Checked)
+                    {
+                        // If paper is empty, ignore button requests and ensure Arduino is locked
+                        if (numPaperLeft.Value <= 0)
+                        {
+                            LogSystem("BUTTON pressed but paper empty — ignoring and locking Arduino button.");
+                            btnTakePictures.Enabled = false;
+                            try
+                            {
+                                if (serialPort?.IsOpen == true)
+                                {
+                                    serialPort.WriteLine("DONE;9999999");
+                                    LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LogSystem("Error sending lock command to Arduino: " + ex.Message);
+                            }
+
+                            return;
+                        }
+
                         TakePicture();
+                    }
                 });
             }
 
@@ -636,8 +806,28 @@ namespace PhotoMaticAa
         }
 
         // Maak finale pagina, toon preview, sla op en print
-        private void CombinePhotosIntoStripsAndSave()
+        private async void CombinePhotosIntoStripsAndSave()
         {
+            if (numPaperLeft.Value <= 0)
+            {
+                LogSystem("Paper level is 0 — printing disabled, button blocked");
+                btnTakePictures.Enabled = false;
+
+                try
+                {
+                    if (serialPort?.IsOpen == true)
+                    {
+                        serialPort.WriteLine("DONE;9999999"); // effectief blokkeren
+                        LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogSystem("Error sending lock command to Arduino: " + ex.Message);
+                }
+
+                return; // stop, niet verder uitvoeren
+            }
             if (capturedPhotos.Count < 3) return;
 
             Bitmap pageBitmap = CombineTwoStripsIntoPage(capturedPhotos);
@@ -665,14 +855,23 @@ namespace PhotoMaticAa
                 }
             }
 
-            PrintImage(pageBitmap);
-            btnTakePictures.Enabled = true;
+            // Disable button while printing and await spooler job to finish
+            btnTakePictures.Enabled = false;
+            await PrintImageAsync(pageBitmap);
+
+            // Papierverbruik bijhouden
+            numPaperLeft.Value = Math.Max(0, numPaperLeft.Value - 1);
+            LogSystem($"Paper used. Remaining sheets: {numPaperLeft.Value}");
         }
 
-        // Start printproces
-        private void PrintImage(Image imageToPrint)
+        // Start printproces and monitor Windows print queue until job completes
+        private async Task PrintImageAsync(Image imageToPrint)
         {
-            PrintDocument printDoc = new();
+            PrintDocument printDoc = new()
+            {
+                DocumentName = $"PhotoMatic_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid()}_{Environment.ProcessId}"
+            };
+
             printDoc.PrintPage += (s, e) =>
             {
                 Rectangle m = e.MarginBounds;
@@ -680,13 +879,113 @@ namespace PhotoMaticAa
                 e.HasMorePages = false;
             };
 
+            // Use selected printer if available, otherwise default system printer
+            string printerNameToUse = currentPrinterName ?? new PrinterSettings().PrinterName;
             try
             {
+                printDoc.PrinterSettings.PrinterName = printerNameToUse;
+            }
+            catch
+            {
+                // If assignment fails, fall back to default printer
+                printDoc.PrinterSettings.PrinterName = new PrinterSettings().PrinterName;
+            }
+
+            try
+            {
+                // Start printing (this call typically returns after spooling)
                 printDoc.Print();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Fout bij printen: " + ex.Message);
+                // Ensure button re-enabled on error
+                if (this.InvokeRequired)
+                    this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true));
+                else
+                    btnTakePictures.Enabled = true;
+
+                return;
+            }
+
+            // Monitor the print queue for the job we just spooled using WMI (Win32_PrintJob)
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    int pollInterval = 500; // ms
+                    int timeoutMs = 120000; // 2 minutes
+                    int elapsed = 0;
+                    bool jobSeen = false;
+
+                    string expectedDocumentName = printDoc.DocumentName;
+
+                    while (true)
+                    {
+                        try
+                        {
+                            using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PrintJob");
+                            var jobs = searcher.Get();
+
+                            bool jobExists = false;
+                            foreach (ManagementObject job in jobs)
+                            {
+                                string name = (job["Name"] ?? string.Empty).ToString();
+                                string document = (job["Document"] ?? string.Empty).ToString();
+                                string owner = (job["Owner"] ?? string.Empty).ToString();
+
+                                // Win32_PrintJob.Name is typically "PrinterName, JobId"
+                                if (!string.IsNullOrEmpty(name) && name.StartsWith(printerNameToUse, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (string.Equals(document, expectedDocumentName, StringComparison.OrdinalIgnoreCase)
+                                        || string.Equals(owner, Environment.UserName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        jobExists = true;
+                                        jobSeen = true;
+                                        break;
+                                    }
+
+                                    // Best-effort: if we haven't seen our job yet, treat any job on the printer as a possible match
+                                    if (!jobSeen)
+                                    {
+                                        jobExists = true;
+                                        jobSeen = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (jobSeen && !jobExists)
+                                break; // job finished
+
+                            if (!jobSeen && elapsed >= timeoutMs)
+                                break; // timed out before seeing job
+
+                            if (jobSeen && elapsed >= timeoutMs)
+                                break; // timed out while waiting for job to finish
+                        }
+                        catch
+                        {
+                            // If querying WMI fails, break and re-enable the button to avoid locking UI
+                            break;
+                        }
+
+                        await Task.Delay(pollInterval);
+                        elapsed += pollInterval;
+                    }
+                });
+            }
+            catch
+            {
+                // ignore monitoring errors
+            }
+            finally
+            {
+                // Re-enable button on UI thread
+                if (this.InvokeRequired)
+                    this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true));
+                else
+                    btnTakePictures.Enabled = true;
             }
         }
 
@@ -828,7 +1127,8 @@ namespace PhotoMaticAa
         {
             if (radioBtnMic.Checked)
             {
-                StartMicrophone();
+                // start selected microphone
+                StartMicrophone(cmbMicrophone.SelectedIndex >= 0 ? cmbMicrophone.SelectedIndex : 0);
                 btnTakePictures.Enabled = false;
             }
             else
@@ -948,8 +1248,77 @@ namespace PhotoMaticAa
                 }
             }
         }
+        // Reset papierniveau en heractiveer knoppen
+        private void btnResetPaper_Click(object sender, EventArgs e)
+        {
+            numPaperLeft.Value = 40;
+            LogSystem("Paper counter reset to 40 (new paper cartridge inserted)");
 
+            btnTakePictures.Enabled = true;
 
+            try
+            {
+                if (serialPort?.IsOpen == true)
+                {
+                    serialPort.WriteLine("DONE;0");
+                    LogCSharp(">> DONE;0 (Arduino button re-enabled)");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error re-enabling Arduino button: " + ex.Message);
+            }
+        }
 
+        private void PopulatePrinterList()
+        {
+            try
+            {
+                installedPrinters.Clear();
+                cmbPrinterSelect.Items.Clear();
+                foreach (string p in PrinterSettings.InstalledPrinters)
+                {
+                    installedPrinters.Add(p);
+                    cmbPrinterSelect.Items.Add(p);
+                }
+
+                if (installedPrinters.Count == 0)
+                {
+                    currentPrinterName = null;
+                    cmbPrinterSelect.Items.Add("No printers");
+                    cmbPrinterSelect.SelectedIndex = 0;
+                    cmbPrinterSelect.Enabled = false;
+                    LogSystem("No printers found on the system.");
+                }
+                else
+                {
+                    cmbPrinterSelect.Enabled = true;
+                    cmbPrinterSelect.SelectedIndex = 0;
+                    currentPrinterName = installedPrinters[0];
+                    LogSystem($"Default printer set to: {currentPrinterName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error populating printers: " + ex.Message);
+            }
+        }
+
+        private void CmbPrinterSelect_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                int idx = cmbPrinterSelect.SelectedIndex;
+                if (idx >= 0 && idx < installedPrinters.Count)
+                {
+                    currentPrinterName = installedPrinters[idx];
+                    LogCSharp($"Selected printer: {currentPrinterName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error selecting printer: " + ex.Message);
+            }
+        }
     }
 }

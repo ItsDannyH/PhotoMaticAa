@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "CQT7BMu3O8w=",
+  "dgSpecHash": "iMV4bIJd7HE=",
   "success": true,
   "projectFilePath": "C:\\Users\\danny\\source\\repos\\PhotoMaticAa\\PhotoMaticAa\\PhotoMaticAa.csproj",
   "expectedPackageFiles": [
@@ -58,11 +58,13 @@
     "C:\\Users\\danny\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\9.0.5\\runtime.osx-arm64.runtime.native.system.io.ports.9.0.5.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\9.0.5\\runtime.osx-x64.runtime.native.system.io.ports.9.0.5.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.clientmodel\\1.5.1\\system.clientmodel.1.5.1.nupkg.sha512",
+    "C:\\Users\\danny\\.nuget\\packages\\system.codedom\\9.0.10\\system.codedom.9.0.10.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.configuration.configurationmanager\\8.0.1\\system.configuration.configurationmanager.8.0.1.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.diagnostics.diagnosticsource\\6.0.1\\system.diagnostics.diagnosticsource.6.0.1.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.diagnostics.eventlog\\8.0.1\\system.diagnostics.eventlog.8.0.1.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.identitymodel.tokens.jwt\\7.7.1\\system.identitymodel.tokens.jwt.7.7.1.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.io.ports\\9.0.5\\system.io.ports.9.0.5.nupkg.sha512",
+    "C:\\Users\\danny\\.nuget\\packages\\system.management\\9.0.10\\system.management.9.0.10.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.memory.data\\8.0.1\\system.memory.data.8.0.1.nupkg.sha512",
     "C:\\Users\\danny\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",

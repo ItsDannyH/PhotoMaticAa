@@ -34,9 +34,14 @@
             numIntervalLed = new NumericUpDown();
             progressBarMic = new ProgressBar();
             groupBox1 = new GroupBox();
+            numFlashTime = new NumericUpDown();
             lblTotalInt = new Label();
+            label10 = new Label();
             label5 = new Label();
+            numKnopCooldown = new NumericUpDown();
             label3 = new Label();
+            label9 = new Label();
+            txtEmail = new TextBox();
             label4 = new Label();
             numIntervalPic = new NumericUpDown();
             label2 = new Label();
@@ -52,21 +57,26 @@
             groupBox3 = new GroupBox();
             btnSelectFont = new Button();
             fontDialog1 = new FontDialog();
-            numKnopCooldown = new NumericUpDown();
-            label9 = new Label();
             rtbLog = new RichTextBox();
-            numFlashTime = new NumericUpDown();
-            label10 = new Label();
-            txtEmail = new TextBox();
+            label11 = new Label();
+            numPaperLeft = new NumericUpDown();
+            btnResetPaper = new Button();
+            cmbCamera = new ComboBox();
+            label12 = new Label();
+            label13 = new Label();
+            cmbMicrophone = new ComboBox();
+            cmbPrinterSelect = new ComboBox();
+            label14 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).BeginInit();
             groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numFlashTime).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalPic).BeginInit();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).BeginInit();
             groupBox3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numFlashTime).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numPaperLeft).BeginInit();
             SuspendLayout();
             // 
             // pictureBox1
@@ -81,9 +91,9 @@
             // 
             // btnTakePictures
             // 
-            btnTakePictures.Location = new Point(342, 613);
+            btnTakePictures.Location = new Point(16, 178);
             btnTakePictures.Name = "btnTakePictures";
-            btnTakePictures.Size = new Size(292, 34);
+            btnTakePictures.Size = new Size(278, 34);
             btnTakePictures.TabIndex = 1;
             btnTakePictures.Text = "Take Picture";
             btnTakePictures.UseVisualStyleBackColor = true;
@@ -140,6 +150,17 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "Interval";
             // 
+            // numFlashTime
+            // 
+            numFlashTime.Location = new Point(228, 171);
+            numFlashTime.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
+            numFlashTime.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numFlashTime.Name = "numFlashTime";
+            numFlashTime.Size = new Size(66, 31);
+            numFlashTime.TabIndex = 14;
+            numFlashTime.Value = new decimal(new int[] { 150, 0, 0, 0 });
+            numFlashTime.ValueChanged += numFlashTime_ValueChanged;
+            // 
             // lblTotalInt
             // 
             lblTotalInt.AutoSize = true;
@@ -150,6 +171,16 @@
             lblTotalInt.TabIndex = 10;
             lblTotalInt.Text = "-";
             // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(6, 173);
+            label10.Margin = new Padding(0);
+            label10.Name = "label10";
+            label10.Size = new Size(229, 25);
+            label10.TabIndex = 15;
+            label10.Text = "Set time Flash Duration: Ms";
+            // 
             // label5
             // 
             label5.AutoSize = true;
@@ -159,6 +190,18 @@
             label5.TabIndex = 9;
             label5.Text = "Total interval :";
             // 
+            // numKnopCooldown
+            // 
+            numKnopCooldown.DecimalPlaces = 1;
+            numKnopCooldown.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numKnopCooldown.Location = new Point(240, 138);
+            numKnopCooldown.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
+            numKnopCooldown.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numKnopCooldown.Name = "numKnopCooldown";
+            numKnopCooldown.Size = new Size(53, 31);
+            numKnopCooldown.TabIndex = 11;
+            numKnopCooldown.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            // 
             // label3
             // 
             label3.AutoSize = true;
@@ -167,6 +210,24 @@
             label3.Size = new Size(39, 25);
             label3.TabIndex = 8;
             label3.Text = "Sec";
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(6, 140);
+            label9.Margin = new Padding(0);
+            label9.Name = "label9";
+            label9.Size = new Size(237, 25);
+            label9.TabIndex = 11;
+            label9.Text = "Block Input after picture: Sec";
+            // 
+            // txtEmail
+            // 
+            txtEmail.Location = new Point(6, 208);
+            txtEmail.Name = "txtEmail";
+            txtEmail.PlaceholderText = "vul hier uw email adress in";
+            txtEmail.Size = new Size(288, 31);
+            txtEmail.TabIndex = 7;
             // 
             // label4
             // 
@@ -215,9 +276,10 @@
             groupBox2.Controls.Add(radioBtnClick);
             groupBox2.Controls.Add(radioBtnMic);
             groupBox2.Controls.Add(progressBarMic);
+            groupBox2.Controls.Add(btnTakePictures);
             groupBox2.Location = new Point(654, 494);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(300, 198);
+            groupBox2.Size = new Size(300, 249);
             groupBox2.TabIndex = 11;
             groupBox2.TabStop = false;
             groupBox2.Text = "Take Picture";
@@ -311,28 +373,6 @@
             btnSelectFont.UseVisualStyleBackColor = true;
             btnSelectFont.Click += btnSelectFont_Click;
             // 
-            // numKnopCooldown
-            // 
-            numKnopCooldown.DecimalPlaces = 1;
-            numKnopCooldown.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numKnopCooldown.Location = new Point(240, 138);
-            numKnopCooldown.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
-            numKnopCooldown.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
-            numKnopCooldown.Name = "numKnopCooldown";
-            numKnopCooldown.Size = new Size(53, 31);
-            numKnopCooldown.TabIndex = 11;
-            numKnopCooldown.Value = new decimal(new int[] { 5, 0, 0, 0 });
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Location = new Point(6, 140);
-            label9.Margin = new Padding(0);
-            label9.Name = "label9";
-            label9.Size = new Size(237, 25);
-            label9.TabIndex = 11;
-            label9.Text = "Block Input after picture: Sec";
-            // 
             // rtbLog
             // 
             rtbLog.Location = new Point(30, 749);
@@ -343,48 +383,111 @@
             rtbLog.TabIndex = 13;
             rtbLog.Text = "";
             // 
-            // numFlashTime
+            // label11
             // 
-            numFlashTime.Location = new Point(228, 171);
-            numFlashTime.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
-            numFlashTime.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            numFlashTime.Name = "numFlashTime";
-            numFlashTime.Size = new Size(66, 31);
-            numFlashTime.TabIndex = 14;
-            numFlashTime.Value = new decimal(new int[] { 150, 0, 0, 0 });
-            numFlashTime.ValueChanged += numFlashTime_ValueChanged;
+            label11.AutoSize = true;
+            label11.Location = new Point(342, 610);
+            label11.Margin = new Padding(0);
+            label11.Name = "label11";
+            label11.Size = new Size(158, 25);
+            label11.TabIndex = 11;
+            label11.Text = "Printer paper level:";
             // 
-            // label10
+            // numPaperLeft
             // 
-            label10.AutoSize = true;
-            label10.Location = new Point(6, 173);
-            label10.Margin = new Padding(0);
-            label10.Name = "label10";
-            label10.Size = new Size(229, 25);
-            label10.TabIndex = 15;
-            label10.Text = "Set time Flash Duration: Ms";
+            numPaperLeft.Increment = new decimal(new int[] { 0, 0, 0, 0 });
+            numPaperLeft.Location = new Point(503, 608);
+            numPaperLeft.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+            numPaperLeft.Name = "numPaperLeft";
+            numPaperLeft.Size = new Size(53, 31);
+            numPaperLeft.TabIndex = 11;
+            numPaperLeft.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
-            // txtEmail
+            // btnResetPaper
             // 
-            txtEmail.Location = new Point(6, 208);
-            txtEmail.Name = "txtEmail";
-            txtEmail.PlaceholderText = "vul hier uw email adress in";
-            txtEmail.Size = new Size(288, 31);
-            txtEmail.TabIndex = 7;
+            btnResetPaper.Location = new Point(560, 606);
+            btnResetPaper.Name = "btnResetPaper";
+            btnResetPaper.Size = new Size(68, 34);
+            btnResetPaper.TabIndex = 14;
+            btnResetPaper.Text = "Reset";
+            btnResetPaper.UseVisualStyleBackColor = true;
+            btnResetPaper.Click += btnResetPaper_Click;
+            // 
+            // cmbCamera
+            // 
+            cmbCamera.FormattingEnabled = true;
+            cmbCamera.Location = new Point(457, 639);
+            cmbCamera.Name = "cmbCamera";
+            cmbCamera.Size = new Size(173, 33);
+            cmbCamera.TabIndex = 15;
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(342, 641);
+            label12.Margin = new Padding(0);
+            label12.Name = "label12";
+            label12.Size = new Size(76, 25);
+            label12.TabIndex = 16;
+            label12.Text = "Camera:";
+            // 
+            // label13
+            // 
+            label13.AutoSize = true;
+            label13.Location = new Point(342, 672);
+            label13.Margin = new Padding(0);
+            label13.Name = "label13";
+            label13.Size = new Size(112, 25);
+            label13.TabIndex = 16;
+            label13.Text = "Microphone:";
+            // 
+            // cmbMicrophone
+            // 
+            cmbMicrophone.FormattingEnabled = true;
+            cmbMicrophone.Location = new Point(457, 670);
+            cmbMicrophone.Name = "cmbMicrophone";
+            cmbMicrophone.Size = new Size(173, 33);
+            cmbMicrophone.TabIndex = 15;
+            // 
+            // cmbPrinterSelect
+            // 
+            cmbPrinterSelect.Enabled = false;
+            cmbPrinterSelect.Location = new Point(412, 702);
+            cmbPrinterSelect.Name = "cmbPrinterSelect";
+            cmbPrinterSelect.Size = new Size(218, 33);
+            cmbPrinterSelect.TabIndex = 16;
+            // 
+            // label14
+            // 
+            label14.AutoSize = true;
+            label14.Location = new Point(342, 705);
+            label14.Margin = new Padding(0);
+            label14.Name = "label14";
+            label14.Size = new Size(67, 25);
+            label14.TabIndex = 16;
+            label14.Text = "Printer:";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(982, 1113);
+            Controls.Add(cmbMicrophone);
+            Controls.Add(cmbPrinterSelect);
+            Controls.Add(cmbCamera);
+            Controls.Add(label14);
+            Controls.Add(label13);
+            Controls.Add(label12);
+            Controls.Add(btnResetPaper);
             Controls.Add(rtbLog);
             Controls.Add(pictureBox1);
             Controls.Add(groupBox3);
             Controls.Add(label6);
+            Controls.Add(numPaperLeft);
             Controls.Add(groupBox2);
+            Controls.Add(label11);
             Controls.Add(groupBox1);
             Controls.Add(txtOndertekst);
-            Controls.Add(btnTakePictures);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
@@ -392,13 +495,14 @@
             ((System.ComponentModel.ISupportInitialize)numIntervalLed).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numFlashTime).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).EndInit();
             ((System.ComponentModel.ISupportInitialize)numIntervalPic).EndInit();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numMicThreshold).EndInit();
             groupBox3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)numKnopCooldown).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numFlashTime).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numPaperLeft).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -435,5 +539,14 @@
         private RichTextBox rtbLog;
         private NumericUpDown numFlashTime;
         private Label label10;
+        private Label label11;
+        private NumericUpDown numPaperLeft;
+        private Button btnResetPaper;
+        private ComboBox cmbCamera;
+        private Label label12;
+        private Label label13;
+        private ComboBox cmbMicrophone;
+        private ComboBox cmbPrinterSelect;
+        private Label label14;
     }
 }

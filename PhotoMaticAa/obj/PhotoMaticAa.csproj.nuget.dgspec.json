@@ -73,6 +73,10 @@
             "System.IO.Ports": {
               "target": "Package",
               "version": "[9.0.5, )"
+            },
+            "System.Management": {
+              "target": "Package",
+              "version": "[9.0.10, )"
             }
           },
           "imports": [
