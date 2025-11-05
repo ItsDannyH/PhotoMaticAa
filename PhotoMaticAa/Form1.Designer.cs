@@ -395,7 +395,6 @@
             // 
             // numPaperLeft
             // 
-            numPaperLeft.Increment = new decimal(new int[] { 0, 0, 0, 0 });
             numPaperLeft.Location = new Point(503, 608);
             numPaperLeft.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
             numPaperLeft.Name = "numPaperLeft";

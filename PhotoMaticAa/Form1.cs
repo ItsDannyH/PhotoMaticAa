@@ -61,6 +61,8 @@ namespace PhotoMaticAa
         // Printer selection
         private List<string> installedPrinters = new List<string>();
         private string? currentPrinterName;
+        // Printing state flag
+        private bool isPrinting = false;
 
         //panel voor camera flits
         private Panel flashPanel;
@@ -522,14 +524,37 @@ namespace PhotoMaticAa
                 return;
             }
 
-            // Blokkeer knop direct bij start fotosessie
-            if (serialPort?.IsOpen == true)
+            // Blokkeer knop direct bij start fotosessie (local + Arduino)
+            btnTakePictures.Enabled = false;
+            try
             {
-                serialPort.WriteLine("BLOCK_BUTTON");
-                LogCSharp("Knop geblokkeerd - fotosessie gestart");
+                // Send a long lock to Arduino so the physical button is blocked for the whole session
+                if (serialPort?.IsOpen == true)
+                {
+                    serialPort.WriteLine("DONE;9999999");
+                    LogCSharp(">> DONE;9999999 sent to Arduino - knop geblokkeerd tijdens fotosessie");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error sending lock to Arduino: " + ex.Message);
             }
 
-            btnTakePictures.Enabled = false;
+            // Immediately reserve/consume one sheet of paper when session starts
+            try
+            {
+                if (this.InvokeRequired)
+                    this.BeginInvoke(new Action(() => numPaperLeft.Value = Math.Max(0, numPaperLeft.Value - 1)));
+                else
+                    numPaperLeft.Value = Math.Max(0, numPaperLeft.Value - 1);
+
+                LogSystem($"Paper reserved/consumed at session start. Remaining sheets: {numPaperLeft.Value}");
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error decrementing paper counter: " + ex.Message);
+            }
+
             capturedPhotos.Clear();
             currentPhotoIndex = 0;
             totalPhotosToTake = 3;
@@ -588,31 +613,47 @@ namespace PhotoMaticAa
             {
                 this.BeginInvoke(() =>
                 {
-                    if (radioBtnClick.Checked)
-                    {
-                        // If paper is empty, ignore button requests and ensure Arduino is locked
-                        if (numPaperLeft.Value <= 0)
-                        {
-                            LogSystem("BUTTON pressed but paper empty — ignoring and locking Arduino button.");
-                            btnTakePictures.Enabled = false;
-                            try
-                            {
-                                if (serialPort?.IsOpen == true)
-                                {
-                                    serialPort.WriteLine("DONE;9999999");
-                                    LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                LogSystem("Error sending lock command to Arduino: " + ex.Message);
-                            }
+                    if (!radioBtnClick.Checked)
+                        return;
 
-                            return;
+                    // If paper is empty, ignore button requests and ensure Arduino is locked
+                    if (numPaperLeft.Value <= 0)
+                    {
+                        LogSystem("BUTTON pressed but paper empty — ignoring and locking Arduino button.");
+                        btnTakePictures.Enabled = false;
+                        try
+                        {
+                            if (serialPort?.IsOpen == true)
+                            {
+                                serialPort.WriteLine("DONE;9999999");
+                                LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogSystem("Error sending lock command to Arduino: " + ex.Message);
                         }
 
-                        TakePicture();
+                        return;
                     }
+
+                    // If we're already taking photos or printing, keep the button locked and ignore presses
+                    if (isTakingPictures || isPrinting)
+                    {
+                        LogSystem("BUTTON pressed while session/printing active — ignored and Arduino kept locked.");
+                        try
+                        {
+                            if (serialPort?.IsOpen == true)
+                            {
+                                serialPort.WriteLine("DONE;9999999");
+                            }
+                        }
+                        catch { }
+                        return;
+                    }
+
+                    // Otherwise start a new session
+                    TakePicture();
                 });
             }
 
@@ -640,20 +681,9 @@ namespace PhotoMaticAa
                         CombinePhotosIntoStripsAndSave();
                         isTakingPictures = false;
 
-                        if (serialPort?.IsOpen == true)
-                        {
-                            int cooldownMs = (int)(numKnopCooldown.Value * 1000);
-                            serialPort.WriteLine($"DONE;{cooldownMs}");
-
-                            if (cooldownMs > 0)
-                            {
-                                LogCSharp($"Fotosessie voltooid - cooldown: {numKnopCooldown.Value} seconden");
-                            }
-                            else
-                            {
-                                LogCSharp("Fotosessie voltooid - knop direct beschikbaar");
-                            }
-                        }
+                        // Do not send DONE to Arduino here: printing is started in CombinePhotosIntoStripsAndSave
+                        // PrintImageAsync will send DONE after the print job finishes and after the configured cooldown.
+                        LogCSharp("Fotosessie voltooid - printopdracht gestart (Arduino wordt vrijgegeven na print + cooldown)");
                     }
                 }));
             }
@@ -663,7 +693,15 @@ namespace PhotoMaticAa
             {
                 this.BeginInvoke(() =>
                 {
-                    btnTakePictures.Enabled = true;
+                    // Only enable the UI button if we're not currently printing
+                    if (!isPrinting)
+                    {
+                        btnTakePictures.Enabled = true;
+                    }
+                    else
+                    {
+                        LogSystem("Ignored BUTTON_ENABLED from Arduino because printing is in progress.");
+                    }
                 });
             }
         }
@@ -718,12 +756,13 @@ namespace PhotoMaticAa
             return strip;
         }
 
-        // Combineert 2 strips op een A4-pagina
+        // Combineert 2 strips op een A4-pagina (fixed pixel size 794 x 1123)
         private Bitmap CombineTwoStripsIntoPage(List<Bitmap> photos)
         {
             Bitmap strip1 = CreateStrip(photos);
             Bitmap strip2 = CreateStrip(photos);
 
+            // Use exact pixel dimensions requested by user
             int pageWidth = 794;
             int pageHeight = 1123;
 
@@ -731,6 +770,8 @@ namespace PhotoMaticAa
             using (Graphics g = Graphics.FromImage(page))
             {
                 g.Clear(Color.White);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
                 if (backgroundImage != null)
                 {
@@ -742,12 +783,17 @@ namespace PhotoMaticAa
                     g.DrawImage(backgroundImage, bgX, bgY, bgWidth, bgHeight);
                 }
 
-                float maxStripHeight = pageHeight * 0.8f;
-                float scaleFactor = Math.Min(maxStripHeight / strip1.Height, (pageWidth * 0.45f) / strip1.Width);
-                int newStripWidth = (int)(strip1.Width * scaleFactor);
-                int newStripHeight = (int)(strip1.Height * scaleFactor);
-
+                // Calculate scaling so two strips fit side by side with a margin
                 int marginBetween = 20;
+
+                float maxStripHeight = pageHeight * 0.8f;
+                float availableHalfWidth = (pageWidth - marginBetween) / 2f;
+
+                float scaleFactor = Math.Min(maxStripHeight / strip1.Height, availableHalfWidth / strip1.Width);
+
+                int newStripWidth = Math.Max(1, (int)(strip1.Width * scaleFactor));
+                int newStripHeight = Math.Max(1, (int)(strip1.Height * scaleFactor));
+
                 int totalWidth = newStripWidth * 2 + marginBetween;
                 int startX = (pageWidth - totalWidth) / 2;
                 int startY = (pageHeight - newStripHeight) / 2;
@@ -805,29 +851,36 @@ namespace PhotoMaticAa
             document.Save(filePath);
         }
 
+        // Save bitmap as PDF to an explicit path (temporary PDF for printing)
+        private void SaveBitmapAsPdfToPath(Bitmap bitmap, string fullPath)
+        {
+            using var document = new PdfDocument();
+            var page = document.AddPage();
+            page.Size = PdfSharp.PageSize.A4;
+
+            using var gfx = XGraphics.FromPdfPage(page);
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            ms.Position = 0;
+            using var xImage = XImage.FromStream(ms);
+
+            double ratioX = page.Width.Point / bitmap.Width;
+            double ratioY = page.Height.Point / bitmap.Height;
+            double ratio = Math.Min(ratioX, ratioY);
+
+            double width = bitmap.Width * ratio;
+            double height = bitmap.Height * ratio;
+            double x = (page.Width.Point - width) / 2;
+            double y = (page.Height.Point - height) / 2;
+
+            gfx.DrawImage(xImage, x, y, width, height);
+            document.Save(fullPath);
+        }
+
         // Maak finale pagina, toon preview, sla op en print
         private async void CombinePhotosIntoStripsAndSave()
         {
-            if (numPaperLeft.Value <= 0)
-            {
-                LogSystem("Paper level is 0 — printing disabled, button blocked");
-                btnTakePictures.Enabled = false;
-
-                try
-                {
-                    if (serialPort?.IsOpen == true)
-                    {
-                        serialPort.WriteLine("DONE;9999999"); // effectief blokkeren
-                        LogCSharp(">> DONE;9999999 (paper empty, Arduino button locked)");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogSystem("Error sending lock command to Arduino: " + ex.Message);
-                }
-
-                return; // stop, niet verder uitvoeren
-            }
+            // Note: paper consumption already handled when session started in TakePicture()
             if (capturedPhotos.Count < 3) return;
 
             Bitmap pageBitmap = CombineTwoStripsIntoPage(capturedPhotos);
@@ -838,35 +891,231 @@ namespace PhotoMaticAa
             if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
             string filePath = Path.Combine(folderPath, fileName);
 
-            SaveBitmapAsPdfBackup(pageBitmap, fileName);
-
-            // 🔹 Save to database
-            string email = txtEmail.Text.Trim();
-            if (!string.IsNullOrEmpty(email))
+            // Optional: keep a PDF backup of the strip
+            try
             {
+                SaveBitmapAsPdfBackup(pageBitmap, fileName);
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Warning: failed to save PDF backup: " + ex.Message);
+            }
+
+            // Ensure UI button remains blocked until print finishes and cooldown handling is done inside PrintImageAsync
+            btnTakePictures.Enabled = false;
+
+            // Print the bitmap directly (no PDF round-trip) — this preserves the exact rendered output
+            await PrintImageAsync(pageBitmap);
+
+            // After PrintImageAsync returns, print finished and cooldown elapsed; session fully complete
+            isTakingPictures = false;
+        }
+
+        // Print a PDF file using the system default print verb and monitor the Windows print queue
+        private async Task PrintPdfAsync(string pdfPath, Image? fallbackImage = null)
+        {
+            isPrinting = true;
+            if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = false)); else btnTakePictures.Enabled = false;
+
+            string printerNameToUse = currentPrinterName ?? new PrinterSettings().PrinterName;
+
+            // Try to start the default associated application with the "print" verb
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = pdfPath,
+                    Verb = "print",
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = true
+                };
+
                 try
                 {
-                    int userId = GetOrCreateUserId(email);
-                    SavePhoto(userId, filePath);
+                    Process.Start(psi);
+                    LogSystem($"Started print process for PDF: {pdfPath}");
+                }
+                catch (System.ComponentModel.Win32Exception winEx)
+                {
+                    // No application associated with .pdf that supports the print verb
+                    LogSystem("Failed to start print process for PDF (no handler): " + winEx.Message);
+                    if (fallbackImage != null)
+                    {
+                        LogSystem("Falling back to image-based printing.");
+                        await PrintImageAsync(fallbackImage);
+                        return; // PrintImageAsync will handle DONE/cooldown and isPrinting state
+                    }
+                    else
+                    {
+                        MessageBox.Show("Geen toepassing gevonden om PDF te printen. Installeer een PDF-reader of gebruik fallback printing.");
+                        // release printing state and re-enable UI
+                        isPrinting = false;
+                        if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true)); else btnTakePictures.Enabled = true;
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Fout bij opslaan naar database: " + ex.Message);
+                    LogSystem("Failed to start print process for PDF: " + ex.Message);
+                    if (fallbackImage != null)
+                    {
+                        LogSystem("Falling back to image-based printing.");
+                        await PrintImageAsync(fallbackImage);
+                        return;
+                    }
                 }
+
+                // Give the application a moment to hand the job to the spooler
+                await Task.Delay(1500);
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Error launching PDF print: " + ex.Message);
             }
 
-            // Disable button while printing and await spooler job to finish
-            btnTakePictures.Enabled = false;
-            await PrintImageAsync(pageBitmap);
+            // Monitor the print queue for the job
+            try
+            {
+                LogSystem("PDF afdruktaak gestart. Wachten op afdruktaak in de wachtrij...");
 
-            // Papierverbruik bijhouden
-            numPaperLeft.Value = Math.Max(0, numPaperLeft.Value - 1);
-            LogSystem($"Paper used. Remaining sheets: {numPaperLeft.Value}");
+                await Task.Run(async () =>
+                {
+                    int pollInterval = 500;
+                    int timeoutMs = 120000;
+                    int elapsed = 0;
+                    bool jobSeen = false;
+                    bool loggedJobDetected = false;
+                    string expectedDocumentName = Path.GetFileName(pdfPath);
+
+                    while (true)
+                    {
+                        try
+                        {
+                            using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PrintJob");
+                            var jobs = searcher.Get();
+
+                            bool jobExists = false;
+                            foreach (ManagementObject job in jobs)
+                            {
+                                string name = (job["Name"] ?? string.Empty).ToString();
+                                string document = (job["Document"] ?? string.Empty).ToString();
+                                string owner = (job["Owner"] ?? string.Empty).ToString();
+
+                                if (!string.IsNullOrEmpty(name) && name.StartsWith(printerNameToUse, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (string.Equals(document, expectedDocumentName, StringComparison.OrdinalIgnoreCase)
+                                        || string.Equals(owner, Environment.UserName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        jobExists = true;
+                                        jobSeen = true;
+                                        break;
+                                    }
+
+                                    if (!jobSeen)
+                                    {
+                                        jobExists = true;
+                                        jobSeen = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (jobSeen && !jobExists)
+                            {
+                                LogSystem("PDF afdruktaak voltooid.");
+                                break;
+                            }
+
+                            if (!jobSeen && elapsed >= timeoutMs)
+                            {
+                                LogSystem("Time-out: geen afdruktaak gevonden binnen de wachttijd (PDF).");
+                                break;
+                            }
+
+                            if (jobSeen && elapsed >= timeoutMs)
+                            {
+                                LogSystem("Time-out tijdens het wachten op afronding van de afdruktaak (PDF).");
+                                break;
+                            }
+
+                            if (jobSeen && !loggedJobDetected)
+                            {
+                                LogSystem("Afdruktaak gevonden - wachten tot deze is voltooid...");
+                                loggedJobDetected = true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogSystem("Fout bij het controleren van de printwachtrij (PDF): " + ex.Message);
+                            break;
+                        }
+
+                        await Task.Delay(pollInterval);
+                        elapsed += pollInterval;
+                    }
+                });
+            }
+            catch { }
+            finally
+            {
+                // After print job finished (or timed out), send DONE with cooldown to Arduino and wait cooldown before re-enabling
+                try
+                {
+                    int cooldownMs = (int)(numKnopCooldown.Value * 1000);
+
+                    if (serialPort?.IsOpen == true)
+                    {
+                        serialPort.WriteLine($"DONE;{cooldownMs}");
+                        LogCSharp($">> DONE;{cooldownMs} (Arduino button state updated)");
+                    }
+
+                    if (cooldownMs > 0)
+                    {
+                        LogSystem($"Wachten {numKnopCooldown.Value} seconden voordat knoppen worden vrijgegeven...");
+                        await Task.Delay(cooldownMs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogSystem("Fout bij het versturen van DONE naar Arduino of wachten op cooldown (PDF): " + ex.Message);
+                }
+
+                // Re-enable button on UI thread
+                LogSystem("Printmonitoring gestopt. Knop heringeven.");
+                if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true)); else btnTakePictures.Enabled = true;
+
+                isPrinting = false;
+            }
         }
 
-        // Start printproces and monitor Windows print queue until job completes
+        // Print an Image using PrintDocument and monitor the print queue (used as fallback)
         private async Task PrintImageAsync(Image imageToPrint)
         {
+            isPrinting = true;
+            if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = false)); else btnTakePictures.Enabled = false;
+
+            // Save debug copy
+            try
+            {
+                string debugFolder = Path.Combine(Application.StartupPath, "print_debug");
+                if (!Directory.Exists(debugFolder)) Directory.CreateDirectory(debugFolder);
+                string debugPath = Path.Combine(debugFolder, $"print_debug_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png");
+                using (var bmp = new Bitmap(imageToPrint.Width, imageToPrint.Height))
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    g.Clear(Color.White);
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(imageToPrint, 0, 0, imageToPrint.Width, imageToPrint.Height);
+                    bmp.Save(debugPath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+                LogSystem($"Saved debug print image: {debugPath}");
+            }
+            catch (Exception ex)
+            {
+                LogSystem("Failed to save debug print image: " + ex.Message);
+            }
+
             PrintDocument printDoc = new()
             {
                 DocumentName = $"PhotoMatic_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid()}_{Environment.ProcessId}"
@@ -874,50 +1123,44 @@ namespace PhotoMaticAa
 
             printDoc.PrintPage += (s, e) =>
             {
-                Rectangle m = e.MarginBounds;
-                DrawCenteredImage(e.Graphics, imageToPrint, m);
+                e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                Rectangle target = e.MarginBounds;
+                if (target.Width <= 0 || target.Height <= 0) target = e.PageBounds;
+
+                DrawCenteredImage(e.Graphics, imageToPrint, target);
                 e.HasMorePages = false;
             };
 
-            // Use selected printer if available, otherwise default system printer
             string printerNameToUse = currentPrinterName ?? new PrinterSettings().PrinterName;
-            try
-            {
-                printDoc.PrinterSettings.PrinterName = printerNameToUse;
-            }
-            catch
-            {
-                // If assignment fails, fall back to default printer
-                printDoc.PrinterSettings.PrinterName = new PrinterSettings().PrinterName;
-            }
+            try { printDoc.PrinterSettings.PrinterName = printerNameToUse; } catch { printDoc.PrinterSettings.PrinterName = new PrinterSettings().PrinterName; }
 
             try
             {
-                // Start printing (this call typically returns after spooling)
                 printDoc.Print();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Fout bij printen: " + ex.Message);
-                // Ensure button re-enabled on error
-                if (this.InvokeRequired)
-                    this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true));
-                else
-                    btnTakePictures.Enabled = true;
-
+                LogSystem("Fout bij printen (image fallback): " + ex.Message);
+                if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true)); else btnTakePictures.Enabled = true;
+                isTakingPictures = false;
+                isPrinting = false;
                 return;
             }
 
-            // Monitor the print queue for the job we just spooled using WMI (Win32_PrintJob)
+            // Monitor the print queue similar to PrintImageAsync earlier
             try
             {
+                LogSystem("Image print opgestuurd naar spooler. Wachten op afdruktaak...");
+
                 await Task.Run(async () =>
                 {
-                    int pollInterval = 500; // ms
-                    int timeoutMs = 120000; // 2 minutes
+                    int pollInterval = 500;
+                    int timeoutMs = 120000;
                     int elapsed = 0;
                     bool jobSeen = false;
-
+                    bool loggedJobDetected = false;
                     string expectedDocumentName = printDoc.DocumentName;
 
                     while (true)
@@ -934,7 +1177,6 @@ namespace PhotoMaticAa
                                 string document = (job["Document"] ?? string.Empty).ToString();
                                 string owner = (job["Owner"] ?? string.Empty).ToString();
 
-                                // Win32_PrintJob.Name is typically "PrinterName, JobId"
                                 if (!string.IsNullOrEmpty(name) && name.StartsWith(printerNameToUse, StringComparison.OrdinalIgnoreCase))
                                 {
                                     if (string.Equals(document, expectedDocumentName, StringComparison.OrdinalIgnoreCase)
@@ -945,7 +1187,6 @@ namespace PhotoMaticAa
                                         break;
                                     }
 
-                                    // Best-effort: if we haven't seen our job yet, treat any job on the printer as a possible match
                                     if (!jobSeen)
                                     {
                                         jobExists = true;
@@ -956,17 +1197,32 @@ namespace PhotoMaticAa
                             }
 
                             if (jobSeen && !jobExists)
-                                break; // job finished
+                            {
+                                LogSystem("Afdruktaak voltooid.");
+                                break;
+                            }
 
                             if (!jobSeen && elapsed >= timeoutMs)
-                                break; // timed out before seeing job
+                            {
+                                LogSystem("Time-out: geen afdruktaak gevonden binnen de wachttijd.");
+                                break;
+                            }
 
                             if (jobSeen && elapsed >= timeoutMs)
-                                break; // timed out while waiting for job to finish
+                            {
+                                LogSystem("Time-out tijdens het wachten op afronding van de afdruktaak.");
+                                break;
+                            }
+
+                            if (jobSeen && !loggedJobDetected)
+                            {
+                                LogSystem("Afdruktaak is gestart - wachten tot deze is voltooid...");
+                                loggedJobDetected = true;
+                            }
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // If querying WMI fails, break and re-enable the button to avoid locking UI
+                            LogSystem("Fout bij het controleren van de printwachtrij: " + ex.Message);
                             break;
                         }
 
@@ -975,17 +1231,34 @@ namespace PhotoMaticAa
                     }
                 });
             }
-            catch
-            {
-                // ignore monitoring errors
-            }
+            catch { }
             finally
             {
-                // Re-enable button on UI thread
-                if (this.InvokeRequired)
-                    this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true));
-                else
-                    btnTakePictures.Enabled = true;
+                try
+                {
+                    int cooldownMs = (int)(numKnopCooldown.Value * 1000);
+
+                    if (serialPort?.IsOpen == true)
+                    {
+                        serialPort.WriteLine($"DONE;{cooldownMs}");
+                        LogCSharp($">> DONE;{cooldownMs} (Arduino button state updated)");
+                    }
+
+                    if (cooldownMs > 0)
+                    {
+                        LogSystem($"Wachten {numKnopCooldown.Value} seconden voordat knoppen worden vrijgegeven...");
+                        await Task.Delay(cooldownMs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogSystem("Fout bij het versturen van DONE naar Arduino of wachten op cooldown: " + ex.Message);
+                }
+
+                LogSystem("Printmonitoring gestopt. Knop heringeven.");
+                if (this.InvokeRequired) this.BeginInvoke(new Action(() => btnTakePictures.Enabled = true)); else btnTakePictures.Enabled = true;
+
+                isPrinting = false;
             }
         }
 
@@ -1083,7 +1356,7 @@ namespace PhotoMaticAa
             // Toon alle controls weer
             foreach (Control control in this.Controls)
             {
-                if (control != pnlVolumeTrackBackground) // Behalve de volume panel die we gaan verwijderen
+                if (control != pnlVolumeTrackBackground) // Behalve de volume panel die we gaan verwijder
                 {
                     control.Visible = true;
                 }
