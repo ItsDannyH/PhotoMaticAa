@@ -89,7 +89,7 @@ namespace PhotoMaticAa
             // Arduino verbinden via COM
             try
             {
-                serialPort = new SerialPort("COM3", 9600);
+                serialPort = new SerialPort("COM4", 9600);
                 serialPort.Open();
                 serialPort.DataReceived += SerialPort_DataReceived;
             }
@@ -436,7 +436,17 @@ namespace PhotoMaticAa
             PrintDocument printDoc = new();
             printDoc.PrintPage += (s, e) =>
             {
-                Rectangle m = e.MarginBounds;
+                printDoc.PrinterSettings.DefaultPageSettings.Margins.Top = 0;
+                printDoc.PrinterSettings.DefaultPageSettings.Margins.Bottom = 0;
+                printDoc.PrinterSettings.DefaultPageSettings.Margins.Left = 0;
+                printDoc.PrinterSettings.DefaultPageSettings.Margins.Right = 0;
+
+                printDoc.PrinterSettings.DefaultPageSettings.Landscape = false;
+                printDoc.PrinterSettings.DefaultPageSettings.PaperSize = new PaperSize("Hagaki", 394, 583);
+
+
+                //marginbounds kapot dit is Een fix voor groote van het geprinte fotostripje
+                Rectangle m = new Rectangle(new Point(0, 0), new Size(394, 583));  // e.MarginBounds;
                 DrawCenteredImage(e.Graphics, imageToPrint, m);
                 e.HasMorePages = false;
             };
