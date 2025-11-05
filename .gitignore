@@ -74,3 +74,6 @@ _ReSharper*/
 *.DotCover
 
 # End of file
+*.vsidx
+/.vs/PhotoMaticAa/FileContentIndex
+*.vsidx

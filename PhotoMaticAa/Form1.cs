@@ -1126,7 +1126,7 @@ namespace PhotoMaticAa
                 e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                Rectangle target = e.MarginBounds;
+                Rectangle target = new Rectangle(new Point(0, 0), new Size(394, 583)); // e.MarginBounds;
                 if (target.Width <= 0 || target.Height <= 0) target = e.PageBounds;
 
                 DrawCenteredImage(e.Graphics, imageToPrint, target);
