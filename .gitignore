@@ -1,3 +1,4 @@
 /PhotoMaticAa/bin/Debug/net8.0-windows/strippenbackup
 PhotoMaticAa/obj/Debug/net8.0-windows/PhotoMaticAa.AssemblyInfo.cs
 PhotoMaticAa/obj/Debug/net8.0-windows/PhotoMaticAa.AssemblyInfoInputs.cache
+*.vsidx
